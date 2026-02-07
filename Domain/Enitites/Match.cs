@@ -22,6 +22,11 @@ namespace Data.Enitites
         public Guid TournamentId { get; set; }
         public Tournament Tournament { get; set; } = null!;
 
+        [ForeignKey(nameof(Group))]
+        public Guid? GroupId { get; set; }
+        public Group? Group { get; set; }
+
+
         // NAVIGATION
         public ICollection<MatchCard> Cards { get; set; } = [];
         public ICollection<MatchGoal> Goals { get; set; } = [];

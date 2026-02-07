@@ -15,6 +15,8 @@ namespace Data.Enitites
         // NAVIGATION (NO TeamBId here!)
         public ICollection<Match> Matches { get; set; } = [];
         public ICollection<Team> Teams { get; set; } = [];
+        public ICollection<Group> Groups { get; set; } = []; 
+
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

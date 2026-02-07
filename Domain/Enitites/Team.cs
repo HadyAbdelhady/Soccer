@@ -1,10 +1,11 @@
 ﻿using Data.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Enitites
 {
-    [Index(nameof(Username), IsUnique = true)] // Ensure unique usernames at the database level
+    [Index(nameof(Username), IsUnique = true)] 
     public class Team : ISoftDeletableEntity
     {
         public Guid Id { get; set; }
@@ -13,16 +14,16 @@ namespace Data.Enitites
 
         [Required, MaxLength(255)] // Store BCrypt/Argon2 hash ONLY
         public string HashedPassword { get; set; } = string.Empty;
+
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }
 
-        // Existing team properties (Name, LogoUrl, etc.)
 
-        // NAVIGATION PROPERTIES (REMOVE TournamentId/MatchId!)
+        // NAVIGATION PROPERTIES
         public ICollection<Player> Players { get; set; } = [];
-        public ICollection<Match> HomeMatches { get; set; } = []; // Was "Team A"
-        public ICollection<Match> AwayMatches { get; set; } = []; // Was "Team B"
+        public ICollection<Match> HomeMatches { get; set; } = []; 
+        public ICollection<Match> AwayMatches { get; set; } = []; 
         public ICollection<Tournament> Tournaments { get; set; } = []; // Many-to-Many
     }
 }

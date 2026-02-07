@@ -52,6 +52,10 @@ namespace Data.DBContext
             modelBuilder.Entity<Player>()
                 .Property(p => p.Position)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<Group>()
+                .HasMany(g => g.Matches)
+                .WithOne(m => m.Group);
         }
 
         public DbSet<Team> Teams => Set<Team>();
@@ -60,6 +64,7 @@ namespace Data.DBContext
         public DbSet<Tournament> Tournaments => Set<Tournament>();
         public DbSet<MatchCard> MatchCards => Set<MatchCard>();
         public DbSet<MatchGoal> MatchGoals => Set<MatchGoal>();
+        public DbSet<Group> Groups => Set<Group>();
 
 
     }
