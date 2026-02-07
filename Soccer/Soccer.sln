@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36915.13 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soccer", "Soccer.csproj", "{265455D9-B1AF-4316-B5BC-38718E8C87E3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Business", "..\Infrastructure\Business.csproj", "{AF3551A9-A690-495F-BB8B-3376D9932D5A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "..\Domain\Data.csproj", "{F802A859-E837-427D-904A-547998D71782}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{265455D9-B1AF-4316-B5BC-38718E8C87E3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{265455D9-B1AF-4316-B5BC-38718E8C87E3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{265455D9-B1AF-4316-B5BC-38718E8C87E3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{265455D9-B1AF-4316-B5BC-38718E8C87E3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AF3551A9-A690-495F-BB8B-3376D9932D5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF3551A9-A690-495F-BB8B-3376D9932D5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF3551A9-A690-495F-BB8B-3376D9932D5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF3551A9-A690-495F-BB8B-3376D9932D5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F802A859-E837-427D-904A-547998D71782}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F802A859-E837-427D-904A-547998D71782}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F802A859-E837-427D-904A-547998D71782}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F802A859-E837-427D-904A-547998D71782}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {099D0997-373A-42B2-A3C6-3426A888BE52}
+	EndGlobalSection
+EndGlobal
