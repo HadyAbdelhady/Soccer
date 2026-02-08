@@ -1,4 +1,4 @@
-﻿namespace Data.enums
+﻿namespace Infra.enums
 {
     public enum GoalType
     {

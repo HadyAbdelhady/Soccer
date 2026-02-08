@@ -1,4 +1,4 @@
-﻿namespace Domain.enums
+﻿namespace Infra.enums
 {
     public enum ErrorType
     {

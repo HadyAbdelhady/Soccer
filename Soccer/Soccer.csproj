@@ -10,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.12" NoWarn="NU1605" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="9.0.12" NoWarn="NU1605" />
-    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.12">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -18,17 +17,11 @@
     <PackageReference Include="Microsoft.Identity.Web" Version="3.0.0" />
     <PackageReference Include="Microsoft.Identity.Web.DownstreamApi" Version="3.0.0" />
     <PackageReference Include="Scrutor" Version="7.0.0" />
-    <PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="10.1.2" />
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="10.1.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Data.csproj" />
     <ProjectReference Include="..\Infrastructure\Business.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Controllers\" />
   </ItemGroup>
 
 </Project>

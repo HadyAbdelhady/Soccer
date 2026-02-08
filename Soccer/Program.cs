@@ -1,7 +1,9 @@
-using Data.DBContext;
-using Data.Interceptors;
-using Data.Interface;
-using Data.Presestent;
+using System.Reflection;
+using Business.Services.Tournaments;
+using Infra.DBContext;
+using Infra.Interceptors;
+using Infra.Interface;
+using Infra.Persistent;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -32,13 +34,25 @@ namespace Soccer
 
             // Open generic base repository
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            builder.Services.AddScoped<ITournamentService, TournamentService>();
+
 
             // Auto-register concrete repository implementations (Scrutor)
-            builder.Services.Scan(scan => scan
-                .FromAssembliesOf(typeof(UnitOfWork))
-                .AddClasses(classes => classes.Where(c => c.Name.EndsWith("Repository")))
-                .AsImplementedInterfaces()
-                .WithScopedLifetime());
+            try
+            {
+                builder.Services.Scan(scan => scan
+                    .FromAssembliesOf(typeof(UnitOfWork))
+                    .AddClasses(classes => classes.Where(c => c.Name.EndsWith("Repository")))
+                    .AsImplementedInterfaces()
+                    .WithScopedLifetime());
+            }
+            catch (ReflectionTypeLoadException ex)
+            {
+                Console.WriteLine("ReflectionTypeLoadException caught!");
+                foreach (var le in ex.LoaderExceptions)
+                    Console.WriteLine(le.Message);
+            }
+
 
             // CORS Configuration (optional - configure as needed)
             builder.Services.AddCors(options =>
@@ -53,7 +67,7 @@ namespace Soccer
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddSwaggerGen();
 
             var app = builder.Build();
 
@@ -69,7 +83,7 @@ namespace Soccer
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
+                // app.MapOpenApi();
             }
 
             app.UseHttpsRedirection();

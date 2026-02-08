@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36915.13 d17.14
+VisualStudioVersion = 17.14.36915.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soccer", "Soccer.csproj", "{265455D9-B1AF-4316-B5BC-38718E8C87E3}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Business", "..\Infrastructure\Business.csproj", "{AF3551A9-A690-495F-BB8B-3376D9932D5A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Data", "..\Domain\Data.csproj", "{F802A859-E837-427D-904A-547998D71782}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Infra", "..\Infra\Infra.csproj", "{FD00E202-03B2-47DF-8462-4E738CC51010}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -27,6 +29,10 @@ Global
 		{F802A859-E837-427D-904A-547998D71782}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F802A859-E837-427D-904A-547998D71782}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F802A859-E837-427D-904A-547998D71782}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FD00E202-03B2-47DF-8462-4E738CC51010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FD00E202-03B2-47DF-8462-4E738CC51010}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FD00E202-03B2-47DF-8462-4E738CC51010}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FD00E202-03B2-47DF-8462-4E738CC51010}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
