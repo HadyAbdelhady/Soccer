@@ -8,10 +8,13 @@ namespace Data.Entities
     public class Team : ISoftDeletableEntity
     {
         public Guid Id { get; set; }
+        [Required, MaxLength(100)]
+        public string Name { get; set; } = string.Empty;
+
         [Required, MaxLength(50)]
         public string Username { get; set; } = string.Empty;
 
-        [Required, MaxLength(255)] // Store BCrypt/Argon2 hash ONLY
+        [Required, MaxLength(255)] 
         public string HashedPassword { get; set; } = string.Empty;
 
         public bool IsDeleted { get; set; }

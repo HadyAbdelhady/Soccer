@@ -1,6 +1,7 @@
 using System.Reflection;
 using Business.Services.Groups;
 using Business.Services.Tournaments;
+using Business.Services.Teams;
 using Infra.DBContext;
 using Infra.Interceptors;
 using Infra.Interface;
@@ -37,6 +38,7 @@ namespace Soccer
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             builder.Services.AddScoped<IGroupService, GroupService>();
             builder.Services.AddScoped<ITournamentService, TournamentService>();
+            builder.Services.AddScoped<ITeamService, TeamService>();
 
 
             // Auto-register concrete repository implementations (Scrutor)
