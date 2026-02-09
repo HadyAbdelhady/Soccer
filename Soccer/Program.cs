@@ -1,4 +1,5 @@
 using System.Reflection;
+using Business.Services.Groups;
 using Business.Services.Tournaments;
 using Infra.DBContext;
 using Infra.Interceptors;
@@ -34,6 +35,7 @@ namespace Soccer
 
             // Open generic base repository
             builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+            builder.Services.AddScoped<IGroupService, GroupService>();
             builder.Services.AddScoped<ITournamentService, TournamentService>();
 
 
