@@ -34,7 +34,7 @@ namespace Business.Services.Tournaments
         {
             var tournament = await unitOfWork.Repository<Tournament>().GetByIdAsync(request.Id);
             
-            if (tournament == null || tournament.IsDeleted)
+            if (tournament == null)
             {
                 return Result<UpdateTournamentResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
             }
@@ -63,7 +63,7 @@ namespace Business.Services.Tournaments
         {
             var tournament = await unitOfWork.Repository<Tournament>().GetByIdAsync(id);
 
-            if (tournament == null || tournament.IsDeleted)
+            if (tournament == null)
             {
                 return Result<DeleteTournamentResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
             }

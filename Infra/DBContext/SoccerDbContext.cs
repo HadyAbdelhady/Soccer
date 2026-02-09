@@ -14,48 +14,57 @@ namespace Infra.DBContext
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // 🔑 UNIQUE INDEX for team logins
             modelBuilder.Entity<Team>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .HasIndex(t => t.Username)
                 .IsUnique();
 
-            // ↔️ MANY-TO-MANY: Teams ↔ Tournaments (generates TeamTournament join table)
             modelBuilder.Entity<Team>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .HasMany(t => t.Tournaments)
                 .WithMany(t => t.Teams)
                 .UsingEntity(j => j
-                    .ToTable("TeamTournament") // Explicit table name
-                    .HasKey("TeamsId", "TournamentsId")); // EF Core 6+ naming
+                    .ToTable("TeamTournament")
+                    .HasKey("TeamsId", "TournamentsId"));
 
-            // 🔄 FIX AMBIGUITY: Two FKs to Team in Match
             modelBuilder.Entity<Match>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .HasOne(m => m.HomeTeam)
                 .WithMany(t => t.HomeMatches)
                 .HasForeignKey(m => m.HomeTeamId)
-                .OnDelete(DeleteBehavior.Restrict); // Prevent accidental cascade deletes
+                .OnDelete(DeleteBehavior.Restrict); 
 
             modelBuilder.Entity<Match>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .HasOne(m => m.AwayTeam)
                 .WithMany(t => t.AwayMatches)
                 .HasForeignKey(m => m.AwayTeamId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // 🗂️ ENUM STORAGE (Store as string for readability)
             modelBuilder.Entity<MatchCard>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .Property(c => c.CardType)
                 .HasConversion<string>();
 
             modelBuilder.Entity<MatchGoal>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .Property(g => g.GoalType)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Player>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .Property(p => p.Position)
                 .HasConversion<string>();
 
             modelBuilder.Entity<Group>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .HasMany(g => g.Matches)
                 .WithOne(m => m.Group);
+
+            modelBuilder.Entity<Tournament>()
+                .HasQueryFilter(x => !x.IsDeleted)
+                .HasMany(t => t.Groups)
+                .WithOne(g => g.Tournament);
         }
 
         public DbSet<Team> Teams => Set<Team>();
