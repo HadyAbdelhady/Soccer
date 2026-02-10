@@ -35,7 +35,8 @@ namespace Business.Services.Teams
                 Id = team.Id,
                 Name = team.Name,
                 Username = generatedUsername,
-                Password = generatedPassword
+                Password = generatedPassword,
+                Message = "Created Successfully"
             };
 
             return Result<CreateTeamResponse>.Success(result);
@@ -58,7 +59,7 @@ namespace Business.Services.Teams
 
             var response = new UpdateTeamResponse
             {
-                Message = "Updated successfully",
+                Message = "Updated Successfully",
                 Id = team.Id,
                 Name = team.Name
             };
@@ -83,7 +84,7 @@ namespace Business.Services.Teams
             {
                 Id = id,
                 IsDeleted = true,
-                Message = "Deleted successfully"
+                Message = "Deleted Successfully"
             };
 
             return Result<DeleteTeamResponse>.Success(response);

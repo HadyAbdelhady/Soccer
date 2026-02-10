@@ -1,4 +1,5 @@
 ﻿using Business.DTOs.Tournaments;
+using Business.Services.Standings;
 using Business.Services.Tournaments;
 using Infra.ResultWrapper;
 using Microsoft.AspNetCore.Mvc;
@@ -8,9 +9,10 @@ namespace Soccer.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TournamentController(ITournamentService tournamentService) : ControllerBase
+    public class TournamentController(ITournamentService tournamentService, IStandingsService standingsService) : ControllerBase
     {
         private readonly ITournamentService tournamentService = tournamentService;
+        private readonly IStandingsService _standingsService = standingsService;
 
         [HttpPost]
         [TranslateResultToActionResult]
@@ -34,6 +36,13 @@ namespace Soccer.Controllers
         {
             var result = await tournamentService.DeleteTournament(id);
             return result;
+        }
+
+        [HttpGet("{id}/top-scorers")]
+        [TranslateResultToActionResult]
+        public async Task<Result<List<TopScorerDto>>> GetTopScorers(Guid id, [FromQuery] int? topN)
+        {
+            return await _standingsService.GetTournamentTopScorersAsync(id, topN);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Infra.Interface;
+using Infra.enums;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Entities
@@ -25,9 +26,10 @@ namespace Data.Entities
         [ForeignKey(nameof(Group))]
         public Guid? GroupId { get; set; }
         public Group? Group { get; set; }
+        public MatchStatus Status { get; set; }
+        public string? Venue { get; set; }
+        public StageType StageType { get; set; }
 
-
-        // NAVIGATION
         public ICollection<MatchCard> Cards { get; set; } = [];
         public ICollection<MatchGoal> Goals { get; set; } = [];
         public bool IsDeleted { get; set; }

@@ -23,7 +23,8 @@ namespace Business.Services.Tournaments
             var result = new CreateTournamentResponse
             {
                 Id = tournament.Id,
-                Name = tournament.Name
+                Name = tournament.Name,
+                Message = "Created Successfully"
             };
             await unitOfWork.Repository<Tournament>().AddAsync(tournament);
             await unitOfWork.SaveChangesAsync();
@@ -49,7 +50,7 @@ namespace Business.Services.Tournaments
 
             var response = new UpdateTournamentResponse
             {
-                Message = "Updated successfully",
+                Message = "Updated Successfully",
                 Id = tournament.Id,
                 Name = tournament.Name,
                 StartDate = tournament.StartDateTime,
@@ -76,7 +77,7 @@ namespace Business.Services.Tournaments
             {
                 Id = id,
                 IsDeleted = true,
-                Message = "Deleted successfully"
+                Message = "Deleted Successfully"
             };
 
             return Result<DeleteTournamentResponse>.Success(response);

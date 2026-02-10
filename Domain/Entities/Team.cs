@@ -1,6 +1,7 @@
 ﻿using Infra.Interface;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Data.Entities
 {
@@ -22,10 +23,12 @@ namespace Data.Entities
         public DateTimeOffset? UpdatedAt { get; set; }
 
 
-        // NAVIGATION PROPERTIES
         public ICollection<Player> Players { get; set; } = [];
         public ICollection<Match> HomeMatches { get; set; } = []; 
         public ICollection<Match> AwayMatches { get; set; } = []; 
-        public ICollection<Tournament> Tournaments { get; set; } = []; // Many-to-Many
+        public ICollection<Tournament> Tournaments { get; set; } = [];
+        [ForeignKey(nameof(Group))]
+        public Guid? GroupId { get; set; }
+        public Group? Group { get; set; }
     }
 }

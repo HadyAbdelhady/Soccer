@@ -6,5 +6,6 @@ namespace Business.DTOs.Teams
         public string Name { get; set; } = null!;
         public string Username { get; set; } = null!;
         public string Password { get; set; } = null!;
+        public string Message { get; set; } = string.Empty;
     }
 }

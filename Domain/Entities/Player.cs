@@ -11,6 +11,8 @@ namespace Data.Entities
 
         [Required, MaxLength(100)]
         public string FullName { get; set; } = string.Empty;
+        [Required, MaxLength(10)]
+        public string NickName { get; set; } = string.Empty;
 
         public PlayerPosition Position { get; set; }
 
@@ -23,7 +25,6 @@ namespace Data.Entities
 
         [ForeignKey(nameof(Team))]
         public Guid TeamId { get; set; }
-        // NAVIGATION
         public Team Team { get; set; } = null!;
         public ICollection<MatchCard> Cards { get; set; } = [];
         public ICollection<MatchGoal> Goals { get; set; } = [];

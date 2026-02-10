@@ -12,11 +12,14 @@ namespace Data.Entities
         public DateTimeOffset? UpdatedAt { get; set; }
         public Guid ScorerId { get; set; }
         public Player Scorer { get; set; } = null!;
+        [ForeignKey(nameof(Team))]
+        public Guid TeamId { get; set; }
+        public Team Team { get; set; } = null!;
 
         [ForeignKey(nameof(Match))]
         public Guid MatchId { get; set; }
         public Match Match { get; set; } = null!;
-        public DateTime GoalTime { get; set; }
+        public int Minute { get; set; }
         public GoalType GoalType { get; set; }
         public bool IsDeleted { get; set; }
     }

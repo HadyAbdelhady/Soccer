@@ -46,20 +46,41 @@ namespace Infra.DBContext
                 .Property(c => c.CardType)
                 .HasConversion<string>();
 
+            modelBuilder.Entity<MatchCard>()
+                .HasOne(c => c.Team)
+                .WithMany()
+                .HasForeignKey(c => c.TeamId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<MatchGoal>()
                 .HasQueryFilter(x => !x.IsDeleted)
                 .Property(g => g.GoalType)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<MatchGoal>()
+                .HasOne(g => g.Team)
+                .WithMany()
+                .HasForeignKey(g => g.TeamId)
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Player>()
                 .HasQueryFilter(x => !x.IsDeleted)
                 .Property(p => p.Position)
                 .HasConversion<string>();
 
+            modelBuilder.Entity<Match>()
+                .Property(m => m.Status)
+                .HasConversion<string>();
+
             modelBuilder.Entity<Group>()
                 .HasQueryFilter(x => !x.IsDeleted)
                 .HasMany(g => g.Matches)
                 .WithOne(m => m.Group);
+
+            modelBuilder.Entity<Group>()
+                .HasMany(g => g.Teams)
+                .WithOne(t => t.Group)
+                .HasForeignKey(t => t.GroupId);
 
             modelBuilder.Entity<Tournament>()
                 .HasQueryFilter(x => !x.IsDeleted)

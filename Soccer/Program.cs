@@ -1,7 +1,11 @@
 using System.Reflection;
+using System.Text.Json.Serialization;
 using Business.Services.Groups;
 using Business.Services.Tournaments;
 using Business.Services.Teams;
+using Business.Services.Players;
+using Business.Services.Standings;
+using Business.Services.Matches;
 using Infra.DBContext;
 using Infra.Interceptors;
 using Infra.Interface;
@@ -39,6 +43,9 @@ namespace Soccer
             builder.Services.AddScoped<IGroupService, GroupService>();
             builder.Services.AddScoped<ITournamentService, TournamentService>();
             builder.Services.AddScoped<ITeamService, TeamService>();
+            builder.Services.AddScoped<IPlayerService, PlayerService>();
+            builder.Services.AddScoped<IStandingsService, StandingsService>();
+            builder.Services.AddScoped<IMatchService, MatchService>();
 
 
             // Auto-register concrete repository implementations (Scrutor)
@@ -69,7 +76,11 @@ namespace Soccer
                 });
             });
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                });
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddSwaggerGen();
 

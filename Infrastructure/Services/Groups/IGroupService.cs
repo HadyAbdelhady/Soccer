@@ -8,5 +8,7 @@ namespace Business.Services.Groups
         Task<Result<CreateGroupResponse>> CreateGroup(CreateGroupRequest request);
         Task<Result<UpdateGroupResponse>> UpdateGroup(UpdateGroupRequest request);
         Task<Result<DeleteGroupResponse>> DeleteGroup(Guid id);
+        Task<Result<TournamentGroupsResponseDto>> GetGroupsByTournament(Guid tournamentId);
+        Task<Result<AssignTeamsResponse>> AssignTeamsToGroup(AssignTeamsRequest request);
     }
 }

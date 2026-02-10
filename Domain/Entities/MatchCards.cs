@@ -12,10 +12,14 @@ namespace Data.Entities
         public Guid PlayerId { get; set; }
         public Player Player { get; set; } = null!;
 
+        [ForeignKey(nameof(Team))]
+        public Guid TeamId { get; set; }
+        public Team Team { get; set; } = null!;
+
         [ForeignKey(nameof(Match))]
         public Guid MatchId { get; set; }
         public Match Match { get; set; } = null!;
-        public DateTime IncidentTime { get; set; }
+        public int Minute { get; set; }
         public bool IsDeleted { get; set; }
 
         public DateTimeOffset CreatedAt { get; set; }
