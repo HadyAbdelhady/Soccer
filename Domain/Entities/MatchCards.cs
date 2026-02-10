@@ -1,4 +1,4 @@
-﻿using Infra.enums;
+using Infra.enums;
 using Infra.Interface;
 using System.ComponentModel.DataAnnotations.Schema;
 

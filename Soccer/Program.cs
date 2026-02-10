@@ -10,6 +10,7 @@ using Infra.DBContext;
 using Infra.Interceptors;
 using Infra.Interface;
 using Infra.Persistent;
+using Infra.Seeding;
 using Microsoft.EntityFrameworkCore;
 
 
@@ -17,7 +18,7 @@ namespace Soccer
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -61,7 +62,7 @@ namespace Soccer
             {
                 Console.WriteLine("ReflectionTypeLoadException caught!");
                 foreach (var le in ex.LoaderExceptions)
-                    Console.WriteLine(le.Message);
+                    Console.WriteLine(le?.Message ?? "(null)");
             }
 
 
@@ -86,6 +87,14 @@ namespace Soccer
 
             var app = builder.Build();
 
+            // Ensure database is migrated and seed bogus data when empty (for testing)
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<SoccerDbContext>();
+                await db.Database.MigrateAsync();
+                await DataSeeder.SeedIfEmptyAsync(db);
+            }
+
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -108,7 +117,7 @@ namespace Soccer
 
             app.MapControllers();
 
-            app.Run();
+            await app.RunAsync();
         }
     }
 }

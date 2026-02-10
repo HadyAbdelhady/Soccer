@@ -1,4 +1,4 @@
-﻿using Data.Entities;
+using Data.Entities;
 using Infra.Interceptors;
 using Microsoft.EntityFrameworkCore;
 
