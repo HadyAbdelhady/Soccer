@@ -56,6 +56,6 @@ namespace Business.DTOs.Matches
     public class SubmitResultResponse
     {
         public Guid MatchId { get; set; }
-        public string Message { get; set; } = "Submitted Successfully";
+        public string Message { get; set; } = "Created Successfully";
     }
 }
