@@ -6,9 +6,10 @@ using Data.Entities;
 
 namespace Business.Services.Teams
 {
-    public class TeamService(IUnitOfWork unitOfWork) : ITeamService
+    public class TeamService(IUnitOfWork unitOfWork, IPasswordHasher passwordHasher) : ITeamService
     {
         private readonly IUnitOfWork unitOfWork = unitOfWork;
+        private readonly IPasswordHasher passwordHasher = passwordHasher;
 
         public async Task<Result<CreateTeamResponse>> CreateTeam(CreateTeamRequest request)
         {
@@ -17,13 +18,14 @@ namespace Business.Services.Teams
             var generatedUsername = $"{baseUsername}_{uniqueSuffix}";
 
             var generatedPassword = GenerateRandomPassword(12);
+            var hashedPassword = passwordHasher.HashPassword(generatedPassword);
 
             var team = new Team
             {
                 Id = Guid.NewGuid(),
                 Name = request.Name,
                 Username = generatedUsername,
-                HashedPassword = generatedPassword,
+                HashedPassword = hashedPassword,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
@@ -88,27 +90,6 @@ namespace Business.Services.Teams
             };
 
             return Result<DeleteTeamResponse>.Success(response);
-        }
-
-        public async Task<Result<LoginResponse>> Login(LoginRequest request)
-        {
-            var team = await unitOfWork.Repository<Team>()
-                .FirstOrDefaultAsync(t => t.Username == request.Username);
-
-            if (team == null || team.HashedPassword != request.Password)
-            {
-                return Result<LoginResponse>.FailureStatusCode("Invalid username or password", ErrorType.UnAuthorized);
-            }
-
-            var response = new LoginResponse
-            {
-                Id = team.Id,
-                Name = team.Name,
-                Username = team.Username,
-                Message = "Login successfully"
-            };
-
-            return Result<LoginResponse>.Success(response);
         }
 
         private static string GenerateRandomPassword(int length)

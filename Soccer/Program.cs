@@ -1,17 +1,22 @@
 using System.Reflection;
+using System.Text;
 using System.Text.Json.Serialization;
+using Business.Services.Auth;
 using Business.Services.Groups;
 using Business.Services.Tournaments;
 using Business.Services.Teams;
 using Business.Services.Players;
 using Business.Services.Standings;
 using Business.Services.Matches;
+using Infra;
 using Infra.DBContext;
 using Infra.Interceptors;
 using Infra.Interface;
 using Infra.Persistent;
 using Infra.Seeding;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 
 namespace Soccer
@@ -48,6 +53,29 @@ namespace Soccer
             builder.Services.AddScoped<IStandingsService, StandingsService>();
             builder.Services.AddScoped<IMatchService, MatchService>();
 
+            // Auth: JWT + password hashing + auth service
+            builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+            builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+
+            var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey is not set. Add it to appsettings or User Secrets.");
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SoccerApi";
+            var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SoccerApiUsers";
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ValidateIssuerSigningKey = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+                        ValidateIssuer = true,
+                        ValidIssuer = jwtIssuer,
+                        ValidateAudience = true,
+                        ValidAudience = jwtAudience,
+                        ValidateLifetime = true,
+                        ClockSkew = TimeSpan.Zero
+                    };
+                });
 
             // Auto-register concrete repository implementations (Scrutor)
             try
@@ -112,6 +140,7 @@ namespace Soccer
 
             app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 

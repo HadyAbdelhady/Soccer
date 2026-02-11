@@ -8,6 +8,5 @@ namespace Business.Services.Teams
         Task<Result<CreateTeamResponse>> CreateTeam(CreateTeamRequest request);
         Task<Result<UpdateTeamResponse>> UpdateTeam(UpdateTeamRequest request);
         Task<Result<DeleteTeamResponse>> DeleteTeam(Guid id);
-        Task<Result<LoginResponse>> Login(LoginRequest request);
     }
 }

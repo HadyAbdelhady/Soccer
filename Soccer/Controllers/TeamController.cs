@@ -35,13 +35,5 @@ namespace Soccer.Controllers
             var result = await teamService.DeleteTeam(id);
             return result;
         }
-
-        [HttpPost("login")]
-        [TranslateResultToActionResult]
-        public async Task<Result<LoginResponse>> Login(LoginRequest request)
-        {
-            var result = await teamService.Login(request);
-            return result;
-        }
     }
 }
