@@ -1,4 +1,5 @@
 ﻿using Infra.Interface;
+using Infra.enums;
 using System.ComponentModel.DataAnnotations;
 
 namespace Data.Entities
@@ -11,6 +12,12 @@ namespace Data.Entities
 
         public DateTime StartDateTime { get; set; }
         public DateTime EndDateTime { get; set; }
+
+        public TournamentType Type { get; set; }
+        public LegsType Legs { get; set; }
+        public int? GroupCount { get; set; }
+        public int? TeamsToAdvance { get; set; }
+
         public ICollection<Match> Matches { get; set; } = [];
         public ICollection<Team> Teams { get; set; } = [];
         public ICollection<Group> Groups { get; set; } = []; 

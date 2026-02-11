@@ -6,8 +6,8 @@ namespace Business.DTOs.Matches
     {
         public Guid TournamentId { get; set; }
         public Guid? GroupId { get; set; }
-        public Guid HomeTeamId { get; set; }
-        public Guid AwayTeamId { get; set; }
+        public Guid? HomeTeamId { get; set; }
+        public Guid? AwayTeamId { get; set; }
         public DateTime KickoffTime { get; set; }
         public string? Venue { get; set; }
         public StageType StageType { get; set; }
@@ -18,10 +18,12 @@ namespace Business.DTOs.Matches
         public Guid Id { get; set; }
         public Guid TournamentId { get; set; }
         public Guid? GroupId { get; set; }
-        public Guid HomeTeamId { get; set; }
-        public string HomeTeamName { get; set; } = null!;
-        public Guid AwayTeamId { get; set; }
-        public string AwayTeamName { get; set; } = null!;
+        public Guid? HomeTeamId { get; set; }
+        public string? HomeTeamName { get; set; }
+        public Guid? AwayTeamId { get; set; }
+        public string? AwayTeamName { get; set; }
+        public string? HomeTeamPlaceholder { get; set; }
+        public string? AwayTeamPlaceholder { get; set; }
         public DateTime KickoffTime { get; set; }
         public string? Venue { get; set; }
         public StageType StageType { get; set; }

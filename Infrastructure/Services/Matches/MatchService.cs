@@ -1,4 +1,5 @@
 using Business.DTOs.Matches;
+using Business.Services.Tournaments;
 using Data.Entities;
 using Infra.enums;
 using Infra.Interface;
@@ -7,9 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services.Matches
 {
-    public class MatchService(IUnitOfWork unitOfWork) : IMatchService
+    public class MatchService(IUnitOfWork unitOfWork, ITournamentService tournamentService) : IMatchService
     {
         private readonly IUnitOfWork unitOfWork = unitOfWork;
+        private readonly ITournamentService tournamentService = tournamentService;
+        
 
         public async Task<Result<MatchResponse>> CreateMatch(CreateMatchRequest request)
         {
@@ -24,8 +27,13 @@ namespace Business.Services.Matches
                 return Result<MatchResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
             }
 
-            var homeTeam = await unitOfWork.Repository<Team>().GetByIdAsync(request.HomeTeamId);
-            var awayTeam = await unitOfWork.Repository<Team>().GetByIdAsync(request.AwayTeamId);
+            if (request.HomeTeamId == null || request.AwayTeamId == null)
+            {
+                return Result<MatchResponse>.FailureStatusCode("Home and Away teams must be specified for manual match creation", ErrorType.BadRequest);
+            }
+
+            var homeTeam = await unitOfWork.Repository<Team>().GetByIdAsync(request.HomeTeamId.Value);
+            var awayTeam = await unitOfWork.Repository<Team>().GetByIdAsync(request.AwayTeamId.Value);
 
             if (homeTeam == null || awayTeam == null)
             {
@@ -58,9 +66,11 @@ namespace Business.Services.Matches
                 TournamentId = match.TournamentId,
                 GroupId = match.GroupId,
                 HomeTeamId = match.HomeTeamId,
-                HomeTeamName = homeTeam.Name,
+                HomeTeamName = homeTeam?.Name,
                 AwayTeamId = match.AwayTeamId,
-                AwayTeamName = awayTeam.Name,
+                AwayTeamName = awayTeam?.Name,
+                HomeTeamPlaceholder = match.HomeTeamPlaceholder,
+                AwayTeamPlaceholder = match.AwayTeamPlaceholder,
                 KickoffTime = match.KickoffTime,
                 Venue = match.Venue,
                 StageType = match.StageType,
@@ -128,6 +138,9 @@ namespace Business.Services.Matches
 
             unitOfWork.Repository<Match>().Update(match);
             await unitOfWork.SaveChangesAsync();
+
+            // Resolve placeholders in the tournament
+            await tournamentService.ResolvePlaceholders(match.TournamentId);
 
             return Result<SubmitResultResponse>.Success(new SubmitResultResponse
             {

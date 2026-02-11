@@ -9,12 +9,17 @@ namespace Data.Entities
         public Guid Id { get; set; }
 
         [ForeignKey(nameof(HomeTeam))]
-        public Guid HomeTeamId { get; set; }
-        public Team HomeTeam { get; set; } = null!;
+        public Guid? HomeTeamId { get; set; }
+        public Team? HomeTeam { get; set; }
 
         [ForeignKey(nameof(AwayTeam))]
-        public Guid AwayTeamId { get; set; }
-        public Team AwayTeam { get; set; } = null!;
+        public Guid? AwayTeamId { get; set; }
+        public Team? AwayTeam { get; set; }
+
+        public string? HomeTeamPlaceholder { get; set; }
+        public string? AwayTeamPlaceholder { get; set; }
+
+        public int RoundNumber { get; set; }
 
         public DateTime KickoffTime { get; set; }
         public DateTime? FinalWhistleTime { get; set; }

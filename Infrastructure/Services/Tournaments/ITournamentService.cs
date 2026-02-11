@@ -8,5 +8,6 @@ namespace Business.Services.Tournaments
         Task<Result<CreateTournamentResponse>> CreateTournament(CreateTournamentRequest request);
         Task<Result<UpdateTournamentResponse>> UpdateTournament(UpdateTournamentRequest request);
         Task<Result<DeleteTournamentResponse>> DeleteTournament(Guid id);
+        Task<Result<bool>> ResolvePlaceholders(Guid tournamentId);
     }
 }

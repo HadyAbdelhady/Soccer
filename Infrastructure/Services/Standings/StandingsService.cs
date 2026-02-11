@@ -74,8 +74,8 @@ namespace Business.Services.Standings
             {
                 var (homeGoals, awayGoals) = CalculateScore(match);
 
-                UpdateTeamStats(standings[match.HomeTeamId], homeGoals, awayGoals, true);
-                UpdateTeamStats(standings[match.AwayTeamId], awayGoals, homeGoals, false);
+                UpdateTeamStats(standings[match.HomeTeamId!.Value], homeGoals, awayGoals, true);
+                UpdateTeamStats(standings[match.AwayTeamId!.Value], awayGoals, homeGoals, false);
 
                 foreach (var card in match.Cards)
                 {
@@ -102,16 +102,15 @@ namespace Business.Services.Standings
                 }
             }
 
-            // Initial sorting
+            // Initial sorting: Points -> GD -> GF -> Alphabetical (H2H will be applied next)
             var sorted = standings.Values
                 .OrderByDescending(t => t.Points)
                 .ThenByDescending(t => t.GoalDifference)
                 .ThenByDescending(t => t.GoalsFor)
-                .ThenBy(t => t.FairPlayScore)
                 .ThenBy(t => t.TeamName)
                 .ToList();
 
-            // Head-to-Head tie breaker after Points, GD, GF, FairPlay
+            // Apply Head-to-Head tie breaker after Points, GD, GF
             var finalStandings = ApplyHeadToHead(sorted, completedMatches);
 
             // Player stats
@@ -247,14 +246,15 @@ namespace Business.Services.Standings
             var result = new List<TeamStandingDto>(sorted);
 
             var tiedGroups = sorted
-                .GroupBy(t => new { t.Points, t.GoalDifference, t.GoalsFor, t.FairPlayScore })
+                .GroupBy(t => new { t.Points, t.GoalDifference, t.GoalsFor })
                 .Where(g => g.Count() > 1);
 
             foreach (var group in tiedGroups)
             {
                 var ids = group.Select(t => t.TeamId).ToList();
                 var relevantMatches = matches
-                    .Where(m => ids.Contains(m.HomeTeamId) && ids.Contains(m.AwayTeamId))
+                    .Where(m => m.HomeTeamId.HasValue && m.AwayTeamId.HasValue && 
+                                ids.Contains(m.HomeTeamId.Value) && ids.Contains(m.AwayTeamId.Value))
                     .ToList();
 
                 if (!relevantMatches.Any()) continue;
@@ -267,18 +267,18 @@ namespace Business.Services.Standings
                 {
                     var (hg, ag) = CalculateScore(m);
 
-                    mini[m.HomeTeamId].GoalsFor += hg;
-                    mini[m.HomeTeamId].GoalsAgainst += ag;
+                    mini[m.HomeTeamId!.Value].GoalsFor += hg;
+                    mini[m.HomeTeamId!.Value].GoalsAgainst += ag;
 
-                    mini[m.AwayTeamId].GoalsFor += ag;
-                    mini[m.AwayTeamId].GoalsAgainst += hg;
+                    mini[m.AwayTeamId!.Value].GoalsFor += ag;
+                    mini[m.AwayTeamId!.Value].GoalsAgainst += hg;
 
-                    if (hg > ag) mini[m.HomeTeamId].Points += 3;
-                    else if (hg < ag) mini[m.AwayTeamId].Points += 3;
+                    if (hg > ag) mini[m.HomeTeamId!.Value].Points += 3;
+                    else if (hg < ag) mini[m.AwayTeamId!.Value].Points += 3;
                     else
                     {
-                        mini[m.HomeTeamId].Points++;
-                        mini[m.AwayTeamId].Points++;
+                        mini[m.HomeTeamId!.Value].Points++;
+                        mini[m.AwayTeamId!.Value].Points++;
                     }
                 }
 

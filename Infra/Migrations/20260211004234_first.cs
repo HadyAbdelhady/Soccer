@@ -19,6 +19,10 @@ namespace Infra.Migrations
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     StartDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     EndDateTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Legs = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    GroupCount = table.Column<int>(type: "int", nullable: true),
+                    TeamsToAdvance = table.Column<int>(type: "int", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
@@ -78,8 +82,11 @@ namespace Infra.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    HomeTeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    AwayTeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    HomeTeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    AwayTeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    HomeTeamPlaceholder = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    AwayTeamPlaceholder = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    RoundNumber = table.Column<int>(type: "int", nullable: false),
                     KickoffTime = table.Column<DateTime>(type: "datetime2", nullable: false),
                     FinalWhistleTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TournamentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),

@@ -58,8 +58,11 @@ namespace Infra.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AwayTeamId")
+                    b.Property<Guid?>("AwayTeamId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AwayTeamPlaceholder")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -70,14 +73,20 @@ namespace Infra.Migrations
                     b.Property<Guid?>("GroupId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("HomeTeamId")
+                    b.Property<Guid?>("HomeTeamId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("HomeTeamPlaceholder")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<DateTime>("KickoffTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("RoundNumber")
+                        .HasColumnType("int");
 
                     b.Property<int>("StageType")
                         .HasColumnType("int");
@@ -292,8 +301,15 @@ namespace Infra.Migrations
                     b.Property<DateTime>("EndDateTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("GroupCount")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<string>("Legs")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -302,6 +318,13 @@ namespace Infra.Migrations
 
                     b.Property<DateTime>("StartDateTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("TeamsToAdvance")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -342,8 +365,7 @@ namespace Infra.Migrations
                     b.HasOne("Data.Entities.Team", "AwayTeam")
                         .WithMany("AwayMatches")
                         .HasForeignKey("AwayTeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Data.Entities.Group", "Group")
                         .WithMany("Matches")
@@ -352,8 +374,7 @@ namespace Infra.Migrations
                     b.HasOne("Data.Entities.Team", "HomeTeam")
                         .WithMany("HomeMatches")
                         .HasForeignKey("HomeTeamId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Data.Entities.Tournament", "Tournament")
                         .WithMany("Matches")

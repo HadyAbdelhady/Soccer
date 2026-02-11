@@ -86,6 +86,14 @@ namespace Infra.DBContext
                 .HasQueryFilter(x => !x.IsDeleted)
                 .HasMany(t => t.Groups)
                 .WithOne(g => g.Tournament);
+
+            modelBuilder.Entity<Tournament>()
+                .Property(t => t.Type)
+                .HasConversion<string>();
+
+            modelBuilder.Entity<Tournament>()
+                .Property(t => t.Legs)
+                .HasConversion<string>();
         }
 
         public DbSet<Team> Teams => Set<Team>();
