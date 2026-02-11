@@ -25,7 +25,34 @@ namespace Soccer
     {
         public static async Task Main(string[] args)
         {
+            try
+            {
+                await RunAsync(args);
+            }
+            catch (Exception ex)
+            {
+                // Log startup failure to stdout so hosting (IIS, Azure, etc.) can show it in logs
+                Console.WriteLine("ASP.NET Core startup failed:");
+                Console.WriteLine(ex.ToString());
+                throw;
+            }
+        }
+
+        private static async Task RunAsync(string[] args)
+        {
             var builder = WebApplication.CreateBuilder(args);
+
+            // Require connection string (avoid 500.30 from invalid/missing DB on production)
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException(
+                    "ConnectionStrings:DefaultConnection is not set. " +
+                    "On production, set it in appsettings.Production.json or environment variables (e.g. ConnectionStrings__DefaultConnection). " +
+                    "Use a real SQL Server connection string; (localdb)\\MSSQLLocalDB is only for local development.");
+            var isProduction = builder.Environment.IsProduction();
+            if (isProduction && connectionString.Contains("localdb", StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException(
+                    "Production must not use LocalDB. Set ConnectionStrings:DefaultConnection to your production SQL Server (e.g. via environment variable ConnectionStrings__DefaultConnection).");
 
             // Register EF Core interceptor used by the DbContext
             builder.Services.AddSingleton<SoftDeleteInterceptor>();
@@ -35,7 +62,7 @@ namespace Soccer
             {
                 // Enable a retry-on-failure execution strategy and set a command timeout
                 options.UseSqlServer(
-                        builder.Configuration.GetConnectionString("DefaultConnection"),
+                        connectionString,
                         sqlServerOptions => sqlServerOptions.EnableRetryOnFailure()
                                                         .CommandTimeout(30)
                     ).AddInterceptors(provider.GetRequiredService<SoftDeleteInterceptor>());
@@ -58,7 +85,11 @@ namespace Soccer
             builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
             builder.Services.AddScoped<IAuthService, AuthService>();
 
-            var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? throw new InvalidOperationException("Jwt:SecretKey is not set. Add it to appsettings or User Secrets.");
+            var jwtSecret = builder.Configuration["Jwt:SecretKey"];
+            if (string.IsNullOrWhiteSpace(jwtSecret))
+                throw new InvalidOperationException(
+                    "Jwt:SecretKey is not set. For production, set it in appsettings.Production.json or environment variables (e.g. Jwt__SecretKey). " +
+                    "Use a secure key at least 32 characters long.");
             var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "SoccerApi";
             var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "SoccerApiUsers";
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -119,14 +150,23 @@ namespace Soccer
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<SoccerDbContext>();
-                await db.Database.MigrateAsync();
-                await DataSeeder.SeedIfEmptyAsync(db);
+                try
+                {
+                    await db.Database.MigrateAsync();
+                    await DataSeeder.SeedIfEmptyAsync(db);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Database migration or seeding failed. Check ConnectionStrings:DefaultConnection (use a real SQL Server on production, not LocalDB).");
+                    Console.WriteLine(ex.ToString());
+                    throw;
+                }
             }
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Educational Platform API v1");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Soccer API v1");
                 c.RoutePrefix = string.Empty; // Swagger UI at root
             });
 
