@@ -1,4 +1,4 @@
-﻿using Infra.Interface;
+using Infra.Interface;
 using Infra.enums;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,7 +21,7 @@ namespace Data.Entities
 
         public int RoundNumber { get; set; }
 
-        public DateTime KickoffTime { get; set; }
+        public DateTime? KickoffTime { get; set; }
         public DateTime? FinalWhistleTime { get; set; }
 
         [ForeignKey(nameof(Tournament))]

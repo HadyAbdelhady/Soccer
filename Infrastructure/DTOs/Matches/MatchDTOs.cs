@@ -24,10 +24,24 @@ namespace Business.DTOs.Matches
         public string? AwayTeamName { get; set; }
         public string? HomeTeamPlaceholder { get; set; }
         public string? AwayTeamPlaceholder { get; set; }
-        public DateTime KickoffTime { get; set; }
+        public DateTime? KickoffTime { get; set; }
         public string? Venue { get; set; }
         public StageType StageType { get; set; }
         public MatchStatus Status { get; set; }
+        public string Message { get; set; } = string.Empty;
+    }
+
+    public class UpdateMatchScheduleRequest
+    {
+        public DateTime? KickoffTime { get; set; }
+        public string? Venue { get; set; }
+    }
+
+    public class UpdateMatchScheduleResponse
+    {
+        public Guid Id { get; set; }
+        public DateTime? KickoffTime { get; set; }
+        public string? Venue { get; set; }
         public string Message { get; set; } = string.Empty;
     }
 

@@ -27,5 +27,13 @@ namespace Soccer.Controllers
             var result = await matchService.SubmitMatchResult(id, request);
             return result;
         }
+
+        [HttpPatch("{id}/schedule")]
+        [TranslateResultToActionResult]
+        public async Task<Result<UpdateMatchScheduleResponse>> UpdateSchedule(Guid id, UpdateMatchScheduleRequest request)
+        {
+            var result = await matchService.UpdateMatchSchedule(id, request);
+            return result;
+        }
     }
 }

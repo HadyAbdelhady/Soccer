@@ -1,4 +1,4 @@
-﻿using Business.DTOs.Tournaments;
+using Business.DTOs.Tournaments;
 using Business.Services.Standings;
 using Business.Services.Tournaments;
 using Infra.ResultWrapper;
@@ -19,6 +19,22 @@ namespace Soccer.Controllers
         public async Task<Result<CreateTournamentResponse>> CreateTournament(CreateTournamentRequest request)
         {
             var result = await tournamentService.CreateTournament(request);
+            return result;
+        }
+
+        [HttpPost("{id}/groups/draw")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GenerateTournamentGroupsResponse>> GenerateGroups(Guid id)
+        {
+            var result = await tournamentService.GenerateGroupsAsync(id);
+            return result;
+        }
+
+        [HttpPost("{id}/matches/draw")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GenerateTournamentMatchesResponse>> GenerateMatches(Guid id)
+        {
+            var result = await tournamentService.GenerateMatchesAsync(id);
             return result;
         }
 

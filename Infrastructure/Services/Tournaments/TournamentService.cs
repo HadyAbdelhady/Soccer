@@ -1,4 +1,4 @@
-﻿using Business.DTOs.Tournaments;
+using Business.DTOs.Tournaments;
 using Business.Services.Standings;
 using Data.Entities;
 using Infra.enums;
@@ -37,8 +37,6 @@ namespace Business.Services.Tournaments
                 Teams = teams
             };
 
-            GenerateDraw(tournament, teams);
-
             await unitOfWork.Repository<Tournament>().AddAsync(tournament);
             await unitOfWork.SaveChangesAsync();
 
@@ -46,21 +44,196 @@ namespace Business.Services.Tournaments
             {
                 Id = tournament.Id,
                 Name = tournament.Name,
-                Message = "Created Successfully with Draw"
+                Message = "Created Successfully"
             };
             return Result<CreateTournamentResponse>.Success(result);
         }
 
-        private void GenerateDraw(Tournament tournament, List<Team> teams)
+        public async Task<Result<GenerateTournamentGroupsResponse>> GenerateGroupsAsync(Guid tournamentId)
         {
+            var tournament = await unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Teams)
+                .Include(t => t.Groups)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
+
+            if (tournament == null)
+            {
+                return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+            }
+
+            if (tournament.Teams == null || !tournament.Teams.Any())
+            {
+                return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Tournament has no teams to draw into groups", ErrorType.BadRequest);
+            }
+
+            if (tournament.Groups.Any())
+            {
+                return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Groups already exist for this tournament", ErrorType.BadRequest);
+            }
+
+            var createdGroups = new List<Group>();
+
             if (tournament.Type == TournamentType.SINGLE_GROUP)
             {
-                GenerateSingleGroupDraw(tournament, teams, null);
+                var shuffledTeams = tournament.Teams.OrderBy(t => Guid.NewGuid()).ToList();
+
+                var group = new Group
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Group A",
+                    TournamentId = tournament.Id,
+                    Tournament = tournament,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+
+                group.Teams = shuffledTeams;
+                tournament.Groups.Add(group);
+
+                foreach (var team in shuffledTeams)
+                {
+                    team.GroupId = group.Id;
+                    team.UpdatedAt = DateTimeOffset.UtcNow;
+                    unitOfWork.Repository<Team>().Update(team);
+                }
+
+                createdGroups.Add(group);
             }
             else if (tournament.Type == TournamentType.MULTI_GROUP_KNOCKOUT)
             {
-                GenerateMultiGroupKnockoutDraw(tournament, teams);
+                if (tournament.GroupCount == null || tournament.GroupCount <= 0)
+                {
+                    return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("GroupCount must be specified for multi-group tournaments", ErrorType.BadRequest);
+                }
+
+                var teams = tournament.Teams.ToList();
+                if (teams.Count % tournament.GroupCount != 0)
+                {
+                    return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Teams cannot be evenly distributed across the configured number of groups", ErrorType.BadRequest);
+                }
+
+                var shuffledTeams = teams.OrderBy(t => Guid.NewGuid()).ToList();
+                int teamsPerGroup = teams.Count / tournament.GroupCount.Value;
+
+                for (int i = 0; i < tournament.GroupCount.Value; i++)
+                {
+                    var group = new Group
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = $"Group {((char)('A' + i))}",
+                        TournamentId = tournament.Id,
+                        Tournament = tournament,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    };
+
+                    var groupTeams = shuffledTeams.Skip(i * teamsPerGroup).Take(teamsPerGroup).ToList();
+                    group.Teams = groupTeams;
+                    tournament.Groups.Add(group);
+
+                    foreach (var team in groupTeams)
+                    {
+                        team.GroupId = group.Id;
+                        team.UpdatedAt = DateTimeOffset.UtcNow;
+                        unitOfWork.Repository<Team>().Update(team);
+                    }
+
+                    createdGroups.Add(group);
+                }
             }
+            else
+            {
+                return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Unsupported tournament type for group draw", ErrorType.BadRequest);
+            }
+
+            unitOfWork.Repository<Tournament>().Update(tournament);
+            await unitOfWork.SaveChangesAsync();
+
+            var response = new GenerateTournamentGroupsResponse
+            {
+                TournamentId = tournament.Id,
+                Message = "Groups generated successfully",
+                Groups = createdGroups
+                    .Select(g => new GeneratedGroupDto
+                    {
+                        Id = g.Id,
+                        Name = g.Name,
+                        TeamCount = g.Teams.Count
+                    })
+                    .ToList()
+            };
+
+            return Result<GenerateTournamentGroupsResponse>.Success(response);
+        }
+
+        public async Task<Result<GenerateTournamentMatchesResponse>> GenerateMatchesAsync(Guid tournamentId)
+        {
+            var tournament = await unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Teams)
+                .Include(t => t.Groups).ThenInclude(g => g.Teams)
+                .Include(t => t.Matches)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
+
+            if (tournament == null)
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+            }
+
+            if (!tournament.Teams.Any())
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Tournament has no teams to generate matches for", ErrorType.BadRequest);
+            }
+
+            if (!tournament.Groups.Any())
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Generate groups before generating matches", ErrorType.BadRequest);
+            }
+
+            if (tournament.Matches.Any())
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Matches already exist for this tournament", ErrorType.BadRequest);
+            }
+
+            int beforeCount = tournament.Matches.Count;
+
+            if (tournament.Type == TournamentType.SINGLE_GROUP)
+            {
+                if (tournament.Groups.Count != 1)
+                {
+                    return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Single-group tournaments must have exactly one group", ErrorType.BadRequest);
+                }
+
+                var group = tournament.Groups.First();
+                var groupTeams = group.Teams.ToList();
+
+                if (groupTeams.Count < 2)
+                {
+                    return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Group must contain at least two teams to generate matches", ErrorType.BadRequest);
+                }
+
+                GenerateSingleGroupDraw(tournament, groupTeams, group);
+            }
+            else if (tournament.Type == TournamentType.MULTI_GROUP_KNOCKOUT)
+            {
+                GenerateMultiGroupKnockoutDraw(tournament);
+            }
+            else
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Unsupported tournament type for match draw", ErrorType.BadRequest);
+            }
+
+            await unitOfWork.SaveChangesAsync();
+
+            int createdCount = tournament.Matches.Count - beforeCount;
+
+            var response = new GenerateTournamentMatchesResponse
+            {
+                TournamentId = tournament.Id,
+                CreatedMatchCount = createdCount,
+                Message = "Matches generated successfully"
+            };
+
+            return Result<GenerateTournamentMatchesResponse>.Success(response);
         }
 
         private void GenerateSingleGroupDraw(Tournament tournament, List<Team> teams, Group? group)
@@ -100,69 +273,22 @@ namespace Business.Services.Tournaments
             }
         }
 
-        private void GenerateMultiGroupKnockoutDraw(Tournament tournament, List<Team> teams)
+        private void GenerateMultiGroupKnockoutDraw(Tournament tournament)
         {
             if (tournament.GroupCount == null || tournament.GroupCount <= 0) return;
-            if (teams.Count % tournament.GroupCount != 0) return;
+            if (!tournament.Groups.Any()) return;
 
-            var shuffledTeams = teams.OrderBy(x => Guid.NewGuid()).ToList();
-            int teamsPerGroup = teams.Count / tournament.GroupCount.Value;
-
-            for (int i = 0; i < tournament.GroupCount.Value; i++)
+            foreach (var group in tournament.Groups.OrderBy(g => g.Name))
             {
-                var group = new Group
-                {
-                    Id = Guid.NewGuid(),
-                    Name = $"Group {((char)('A' + i))}",
-                    TournamentId = tournament.Id,
-                    Tournament = tournament,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-
-                var groupTeams = shuffledTeams.Skip(i * teamsPerGroup).Take(teamsPerGroup).ToList();
-                group.Teams = groupTeams;
-                tournament.Groups.Add(group);
+                var groupTeams = group.Teams.ToList();
+                if (groupTeams.Count < 2) continue;
 
                 GenerateSingleGroupDraw(tournament, groupTeams, group);
             }
 
             GenerateKnockoutPlaceholders(tournament);
         }
-
-        //private void GenerateKnockoutPlaceholders(Tournament tournament)
-        //{
-        //    // Simplified fixed bracket logic for demo (QF -> SF -> Final)
-        //    // Assuming 4 groups, top 2 advance = 8 teams
-        //    if (tournament.GroupCount == 4 && tournament.TeamsToAdvance == 2)
-        //    {
-        //        // QF1: A1 vs C2
-        //        // QF2: B1 vs D2
-        //        // QF3: C1 vs A2
-        //        // QF4: D1 vs B2
-        //        AddPlaceholderMatch(tournament, "Winner OF Group A", "Runner-up OF Group C", 1, "QF 1");
-        //        AddPlaceholderMatch(tournament, "Winner OF Group B", "Runner-up OF Group D", 1, "QF 2");
-        //        AddPlaceholderMatch(tournament, "Winner OF Group C", "Runner-up OF Group A", 1, "QF 3");
-        //        AddPlaceholderMatch(tournament, "Winner OF Group D", "Runner-up OF Group B", 1, "QF 4");
-
-        //        // SF1: WQF1 vs WQF3
-        //        AddPlaceholderMatch(tournament, "Winner OF QF 1", "Winner OF QF 3", 2, "SF 1");
-        //        // SF2: WQF2 vs WQF4
-        //        AddPlaceholderMatch(tournament, "Winner OF QF 2", "Winner OF QF 4", 2, "SF 2");
-
-        //        // Final: WSF1 vs WSF2
-        //        AddPlaceholderMatch(tournament, "Winner OF SF 1", "Winner OF SF 2", 3, "Final");
-        //    }
-        //    else if (tournament.GroupCount == 2 && tournament.TeamsToAdvance == 2)
-        //    {
-        //        // SF1: A1 vs B2
-        //        // SF2: B1 vs A2
-        //        AddPlaceholderMatch(tournament, "Winner OF Group A", "Runner-up OF Group B", 1, "SF 1");
-        //        AddPlaceholderMatch(tournament, "Winner OF Group B", "Runner-up OF Group A", 1, "SF 2");
-
-        //        // Final: WSF1 vs WSF2
-        //        AddPlaceholderMatch(tournament, "Winner OF SF 1", "Winner OF SF 2", 2, "Final");
-        //    }
-        //}
+        
         private void GenerateKnockoutPlaceholders(Tournament tournament)
         {
             if (tournament.GroupCount == null || tournament.TeamsToAdvance == null)
@@ -171,7 +297,6 @@ namespace Business.Services.Tournaments
             int totalQualified =
                 tournament.GroupCount.Value * tournament.TeamsToAdvance.Value;
 
-            // لازم يكون Power of 2 (8, 16, 32...)
             if ((totalQualified & (totalQualified - 1)) != 0)
                 return;
 

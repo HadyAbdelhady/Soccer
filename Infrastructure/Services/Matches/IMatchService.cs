@@ -7,5 +7,6 @@ namespace Business.Services.Matches
     {
         Task<Result<MatchResponse>> CreateMatch(CreateMatchRequest request);
         Task<Result<SubmitResultResponse>> SubmitMatchResult(Guid matchId, SubmitResultRequest request);
+        Task<Result<UpdateMatchScheduleResponse>> UpdateMatchSchedule(Guid matchId, UpdateMatchScheduleRequest request);
     }
 }

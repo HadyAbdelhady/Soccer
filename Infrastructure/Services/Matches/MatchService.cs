@@ -147,5 +147,40 @@ namespace Business.Services.Matches
                 MatchId = matchId
             });
         }
+
+        public async Task<Result<UpdateMatchScheduleResponse>> UpdateMatchSchedule(Guid matchId, UpdateMatchScheduleRequest request)
+        {
+            var match = await unitOfWork.Repository<Match>().GetByIdAsync(matchId);
+
+            if (match == null)
+            {
+                return Result<UpdateMatchScheduleResponse>.FailureStatusCode("Match not found", ErrorType.NotFound);
+            }
+
+            if (request.KickoffTime.HasValue)
+            {
+                match.KickoffTime = request.KickoffTime;
+            }
+
+            if (request.Venue != null)
+            {
+                match.Venue = request.Venue;
+            }
+
+            match.UpdatedAt = DateTimeOffset.UtcNow;
+
+            unitOfWork.Repository<Match>().Update(match);
+            await unitOfWork.SaveChangesAsync();
+
+            var response = new UpdateMatchScheduleResponse
+            {
+                Id = match.Id,
+                KickoffTime = match.KickoffTime,
+                Venue = match.Venue,
+                Message = "Match schedule updated successfully"
+            };
+
+            return Result<UpdateMatchScheduleResponse>.Success(response);
+        }
     }
 }
