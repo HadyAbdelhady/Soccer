@@ -15,14 +15,6 @@ namespace Business.Services.Tournaments
 
         public async Task<Result<CreateTournamentResponse>> CreateTournament(CreateTournamentRequest request)
         {
-            var teams = await unitOfWork.Repository<Team>()
-                .GetAll()
-                .Where(t => request.TeamIds.Contains(t.Id))
-                .ToListAsync();
-
-            if (teams.Count != request.TeamIds.Count)
-                return Result<CreateTournamentResponse>.FailureStatusCode("One or more teams not found", ErrorType.NotFound);
-
             var tournament = new Tournament
             {
                 Id = Guid.NewGuid(),
@@ -33,8 +25,7 @@ namespace Business.Services.Tournaments
                 Legs = request.Legs,
                 GroupCount = request.GroupCount,
                 TeamsToAdvance = request.TeamsToAdvance,
-                CreatedAt = DateTimeOffset.UtcNow,
-                Teams = teams
+                CreatedAt = DateTimeOffset.UtcNow
             };
 
             await unitOfWork.Repository<Tournament>().AddAsync(tournament);
@@ -48,6 +39,48 @@ namespace Business.Services.Tournaments
             };
             return Result<CreateTournamentResponse>.Success(result);
         }
+
+        public async Task<Result<AddTeamToTournamentResponse>> AddTeamToTournament(AddTeamToTournamentRequest request)
+        {
+            var tournament = await unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Teams)
+                .FirstOrDefaultAsync(t => t.Id == request.TournamentId);
+
+            if (tournament == null)
+            {
+                return Result<AddTeamToTournamentResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+            }
+
+            var team = await unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
+
+            if (team == null)
+            {
+                return Result<AddTeamToTournamentResponse>.FailureStatusCode("Team not found", ErrorType.NotFound);
+            }
+
+            if (tournament.Teams.Any(t => t.Id == request.TeamId))
+            {
+                return Result<AddTeamToTournamentResponse>.FailureStatusCode("Team is already enrolled in this tournament", ErrorType.BadRequest);
+            }
+
+            tournament.Teams.Add(team);
+            tournament.UpdatedAt = DateTimeOffset.UtcNow;
+
+            unitOfWork.Repository<Tournament>().Update(tournament);
+            await unitOfWork.SaveChangesAsync();
+
+            var response = new AddTeamToTournamentResponse
+            {
+                TournamentId = tournament.Id,
+                TeamId = team.Id,
+                TeamName = team.Name,
+                Message = "Team added to tournament successfully"
+            };
+
+            return Result<AddTeamToTournamentResponse>.Success(response);
+        }
+
 
         public async Task<Result<GenerateTournamentGroupsResponse>> GenerateGroupsAsync(Guid tournamentId)
         {
@@ -164,6 +197,129 @@ namespace Business.Services.Tournaments
 
             return Result<GenerateTournamentGroupsResponse>.Success(response);
         }
+
+        public async Task<Result<RegenerateGroupsResponse>> RegenerateGroupsAsync(Guid tournamentId)
+        {
+            var tournament = await unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Teams)
+                .Include(t => t.Groups)
+                    .ThenInclude(g => g.Teams)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
+
+            if (tournament == null)
+            {
+                return Result<RegenerateGroupsResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+            }
+
+            if (tournament.Teams == null || !tournament.Teams.Any())
+            {
+                return Result<RegenerateGroupsResponse>.FailureStatusCode("Tournament has no teams to redistribute into groups", ErrorType.BadRequest);
+            }
+
+            if (!tournament.Groups.Any())
+            {
+                return Result<RegenerateGroupsResponse>.FailureStatusCode("No groups exist. Please generate groups first using the draw endpoint", ErrorType.BadRequest);
+            }
+
+            var shuffledTeams = tournament.Teams.OrderBy(t => Guid.NewGuid()).ToList();
+
+            if (tournament.Type == TournamentType.SINGLE_GROUP)
+            {
+                // For single group, just reassign all teams to the existing group
+                var group = tournament.Groups.First();
+
+                // Clear existing team assignments
+                foreach (var team in group.Teams.ToList())
+                {
+                    team.GroupId = null;
+                    team.UpdatedAt = DateTimeOffset.UtcNow;
+                    unitOfWork.Repository<Team>().Update(team);
+                }
+                group.Teams.Clear();
+
+                // Assign shuffled teams to the group
+                foreach (var team in shuffledTeams)
+                {
+                    team.GroupId = group.Id;
+                    team.UpdatedAt = DateTimeOffset.UtcNow;
+                    unitOfWork.Repository<Team>().Update(team);
+                }
+                group.Teams = shuffledTeams;
+                group.UpdatedAt = DateTimeOffset.UtcNow;
+            }
+            else if (tournament.Type == TournamentType.MULTI_GROUP_KNOCKOUT)
+            {
+                if (tournament.GroupCount == null || tournament.GroupCount <= 0)
+                {
+                    return Result<RegenerateGroupsResponse>.FailureStatusCode("GroupCount must be specified for multi-group tournaments", ErrorType.BadRequest);
+                }
+
+                if (shuffledTeams.Count % tournament.GroupCount != 0)
+                {
+                    return Result<RegenerateGroupsResponse>.FailureStatusCode("Teams cannot be evenly distributed across the configured number of groups", ErrorType.BadRequest);
+                }
+
+                int teamsPerGroup = shuffledTeams.Count / tournament.GroupCount.Value;
+
+                // Get existing groups ordered by name
+                var existingGroups = tournament.Groups.OrderBy(g => g.Name).ToList();
+
+                // Clear all existing team assignments
+                foreach (var group in existingGroups)
+                {
+                    foreach (var team in group.Teams.ToList())
+                    {
+                        team.GroupId = null;
+                        team.UpdatedAt = DateTimeOffset.UtcNow;
+                        unitOfWork.Repository<Team>().Update(team);
+                    }
+                    group.Teams.Clear();
+                }
+
+                // Redistribute teams to existing groups
+                for (int i = 0; i < existingGroups.Count; i++)
+                {
+                    var group = existingGroups[i];
+                    var groupTeams = shuffledTeams.Skip(i * teamsPerGroup).Take(teamsPerGroup).ToList();
+
+                    foreach (var team in groupTeams)
+                    {
+                        team.GroupId = group.Id;
+                        team.UpdatedAt = DateTimeOffset.UtcNow;
+                        unitOfWork.Repository<Team>().Update(team);
+                    }
+
+                    group.Teams = groupTeams;
+                    group.UpdatedAt = DateTimeOffset.UtcNow;
+                }
+            }
+            else
+            {
+                return Result<RegenerateGroupsResponse>.FailureStatusCode("Unsupported tournament type for group regeneration", ErrorType.BadRequest);
+            }
+
+            unitOfWork.Repository<Tournament>().Update(tournament);
+            await unitOfWork.SaveChangesAsync();
+
+            var response = new RegenerateGroupsResponse
+            {
+                TournamentId = tournament.Id,
+                Message = "Groups regenerated successfully",
+                Groups = tournament.Groups
+                    .OrderBy(g => g.Name)
+                    .Select(g => new GeneratedGroupDto
+                    {
+                        Id = g.Id,
+                        Name = g.Name,
+                        TeamCount = g.Teams.Count
+                    })
+                    .ToList()
+            };
+
+            return Result<RegenerateGroupsResponse>.Success(response);
+        }
+
 
         public async Task<Result<GenerateTournamentMatchesResponse>> GenerateMatchesAsync(Guid tournamentId)
         {

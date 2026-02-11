@@ -11,6 +11,5 @@ namespace Business.DTOs.Tournaments
         public LegsType Legs { get; set; }
         public int? GroupCount { get; set; }
         public int? TeamsToAdvance { get; set; }
-        public List<Guid> TeamIds { get; set; } = [];
     }
 }
