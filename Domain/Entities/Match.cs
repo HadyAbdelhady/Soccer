@@ -10,11 +10,11 @@ namespace Data.Entities
 
         [ForeignKey(nameof(HomeTeam))]
         public Guid? HomeTeamId { get; set; }
-        public Team? HomeTeam { get; set; }
+        public TeamUser? HomeTeam { get; set; }
 
         [ForeignKey(nameof(AwayTeam))]
         public Guid? AwayTeamId { get; set; }
-        public Team? AwayTeam { get; set; }
+        public TeamUser? AwayTeam { get; set; }
 
         public string? HomeTeamPlaceholder { get; set; }
         public string? AwayTeamPlaceholder { get; set; }

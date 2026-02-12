@@ -6,10 +6,11 @@ using System.ComponentModel.DataAnnotations;
 namespace Data.Entities
 {
     /// <summary>
-    /// App user for Admin and Viewer roles. Teams use the Team entity.
+    /// Base user entity for TPT (Table-Per-Type) inheritance
+    /// Each derived type will have its own table with only specific properties
     /// </summary>
     [Index(nameof(Username), IsUnique = true)]
-    public class User : ISoftDeletableEntity
+    public abstract class BaseUser : ISoftDeletableEntity
     {
         public Guid Id { get; set; }
 
@@ -21,9 +22,6 @@ namespace Data.Entities
 
         [Required, MaxLength(255)]
         public string HashedPassword { get; set; } = string.Empty;
-
-        [Required, MaxLength(20)]
-        public UserRole Role { get; set; } = UserRole.Viewer; // "Admin" or "Viewer"
 
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

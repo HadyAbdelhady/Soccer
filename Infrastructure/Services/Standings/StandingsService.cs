@@ -28,7 +28,7 @@ namespace Business.Services.Standings
                 .Select(t => new TeamStandingDto
                 {
                     TeamId = t.Id,
-                    TeamName = t.Name,
+                    TeamName = t.FullName,
                     MatchesPlayed = 0,
                     HomeMatchesPlayed = 0,
                     AwayMatchesPlayed = 0,
@@ -185,7 +185,7 @@ namespace Business.Services.Standings
             {
                 PlayerId = p.Id,
                 PlayerName = p.FullName,
-                TeamName = p.Team?.Name ?? "Unknown",
+                TeamName = p.Team?.FullName ?? "Unknown",
                 Goals = completedMatches.SelectMany(m => m.Goals)
                     .Count(g => g.ScorerId == p.Id && g.GoalType != GoalType.OWNGOAL)
             }).ToList();

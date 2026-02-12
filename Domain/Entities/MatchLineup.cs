@@ -16,7 +16,7 @@ namespace Data.Entities
 
         [ForeignKey(nameof(Team))]
         public Guid TeamId { get; set; }
-        public Team Team { get; set; } = null!;
+        public TeamUser Team { get; set; } = null!;
 
         [ForeignKey(nameof(Player))]
         public Guid PlayerId { get; set; }

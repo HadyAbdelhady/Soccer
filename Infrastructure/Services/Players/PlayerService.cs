@@ -12,7 +12,7 @@ namespace Business.Services.Players
 
         public async Task<Result<CreatePlayerResponse>> CreatePlayer(CreatePlayerRequest request)
         {
-            var team = await unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
+            var team = await unitOfWork.Repository<TeamUser>().GetByIdAsync(request.TeamId);
             if (team == null)
             {
                 return Result<CreatePlayerResponse>.FailureStatusCode("Team not found", ErrorType.NotFound);
@@ -51,7 +51,7 @@ namespace Business.Services.Players
                 return Result<UpdatePlayerResponse>.FailureStatusCode("Player not found", ErrorType.NotFound);
             }
 
-            var team = await unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
+            var team = await unitOfWork.Repository<TeamUser>().GetByIdAsync(request.TeamId);
             if (team == null)
             {
                 return Result<UpdatePlayerResponse>.FailureStatusCode("Team not found", ErrorType.NotFound);
@@ -119,7 +119,7 @@ namespace Business.Services.Players
                 JerseyNumber = player.JerseyNumber,
                 IsCaptain = player.IsCaptain,
                 TeamId = player.TeamId,
-                TeamName = player.Team?.Name ?? "N/A"
+                TeamName = player.Team?.FullName ?? "N/A"
             };
 
             return Result<GetPlayerResponse>.Success(response);
@@ -140,7 +140,7 @@ namespace Business.Services.Players
                     JerseyNumber = p.JerseyNumber,
                     IsCaptain = p.IsCaptain,
                     TeamId = p.TeamId,
-                    TeamName = p.Team.Name
+                    TeamName = p.Team.FullName
                 })
                 .ToListAsync();
 

@@ -15,7 +15,7 @@ namespace Data.Entities
         public Guid TournamentId { get; set; }
         public Tournament Tournament { get; set; } = null!;
         public ICollection<Match> Matches { get; set; } = [];
-        public ICollection<Team> Teams { get; set; } = [];
+        public ICollection<TeamUser> Teams { get; set; } = [];
 
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedAt { get; set; }

@@ -58,7 +58,7 @@ namespace Business.Services.Tournaments
 
             foreach (var teamId in request.TeamIds)
             {
-                var team = await unitOfWork.Repository<Team>().GetByIdAsync(teamId);
+                var team = await unitOfWork.Repository<TeamUser>().GetByIdAsync(teamId);
                 if (team == null) continue;
 
                 if (tournament.Teams.Any(t => t.Id == teamId)) continue;
@@ -69,7 +69,7 @@ namespace Business.Services.Tournaments
                 {
                     TournamentId = tournament.Id,
                     TeamId = team.Id,
-                    TeamName = team.Name,
+                    TeamName = team.FullName,
                     Message = "Team added successfully"
                 });
             }
@@ -232,7 +232,7 @@ namespace Business.Services.Tournaments
                 {
                     team.GroupId = null;
                     team.UpdatedAt = DateTimeOffset.UtcNow;
-                    unitOfWork.Repository<Team>().Update(team);
+                    unitOfWork.Repository<TeamUser>().Update(team);
                 }
                 group.Teams.Clear();
 
@@ -241,7 +241,7 @@ namespace Business.Services.Tournaments
                 {
                     team.GroupId = group.Id;
                     team.UpdatedAt = DateTimeOffset.UtcNow;
-                    unitOfWork.Repository<Team>().Update(team);
+                    unitOfWork.Repository<TeamUser>().Update(team);
                 }
                 group.Teams = shuffledTeams;
                 group.UpdatedAt = DateTimeOffset.UtcNow;
@@ -270,7 +270,7 @@ namespace Business.Services.Tournaments
                     {
                         team.GroupId = null;
                         team.UpdatedAt = DateTimeOffset.UtcNow;
-                        unitOfWork.Repository<Team>().Update(team);
+                        unitOfWork.Repository<TeamUser>().Update(team);
                     }
                     group.Teams.Clear();
                 }
@@ -285,7 +285,7 @@ namespace Business.Services.Tournaments
                     {
                         team.GroupId = group.Id;
                         team.UpdatedAt = DateTimeOffset.UtcNow;
-                        unitOfWork.Repository<Team>().Update(team);
+                        unitOfWork.Repository<TeamUser>().Update(team);
                     }
 
                     group.Teams = groupTeams;
@@ -489,7 +489,7 @@ namespace Business.Services.Tournaments
             return Result<GenerateTournamentMatchesResponse>.Success(response);
         }
 
-        private void GenerateSingleGroupDraw(Tournament tournament, List<Team> teams, Group? group)
+        private void GenerateSingleGroupDraw(Tournament tournament, List<TeamUser> teams, Group? group)
         {
             var teamList = teams.OrderBy(x => Guid.NewGuid()).ToList();
             int n = teamList.Count;
@@ -612,7 +612,7 @@ namespace Business.Services.Tournaments
             };
         }
 
-        private void AddMatch(Tournament tournament, Group? group, Team home, Team away, int round)
+        private void AddMatch(Tournament tournament, Group? group, TeamUser home, TeamUser away, int round)
         {
             var match = new Match
             {

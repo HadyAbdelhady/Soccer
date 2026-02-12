@@ -1,10 +1,11 @@
-using Infra.Interface;
 using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+using Microsoft.IdentityModel.Tokens;
 using System.Security.Cryptography;
+using System.Security.Claims;
+using Infra.Interface;
 using System.Text;
+using Infra.enums;
 
 namespace Infra
 {
@@ -27,13 +28,13 @@ namespace Infra
             _expirationMinutes = int.Parse(_configuration["Jwt:ExpirationMinutes"] ?? "1440"); // Default 24 hours
         }
 
-        public string GenerateToken(Guid userId, string email, string role, string fullName)
+        public string GenerateToken(Guid userId, string email, UserRole role, string fullName)
         {
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
                 new Claim(ClaimTypes.Email, email),
-                new Claim(ClaimTypes.Role, role),
+                new Claim(ClaimTypes.Role, role.ToString()),
                 new Claim(ClaimTypes.Name, fullName),
                 new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, email),

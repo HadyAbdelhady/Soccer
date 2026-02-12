@@ -19,7 +19,7 @@ namespace Data.Entities
         public int? TeamsToAdvance { get; set; }
 
         public ICollection<Match> Matches { get; set; } = [];
-        public ICollection<Team> Teams { get; set; } = [];
+        public ICollection<TeamUser> Teams { get; set; } = [];
         public ICollection<Group> Groups { get; set; } = []; 
 
         public bool IsDeleted { get; set; }

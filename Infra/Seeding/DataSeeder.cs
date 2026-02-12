@@ -19,13 +19,13 @@ namespace Infra.Seeding
         {
             if (db == null) return;
 
-            // If DB already has teams but no users (e.g. after adding User table), seed Admin and Viewer only
-            if (await db.Teams.IgnoreQueryFilters().AnyAsync() && !await db.Users.IgnoreQueryFilters().AnyAsync())
+            // If DB already has team users but no users (e.g. after adding User table), seed Admin and Viewer only
+            if (await db.TeamUsers.IgnoreQueryFilters().AnyAsync() && !await db.Users.IgnoreQueryFilters().AnyAsync())
             {
                 var hashedSeed = HashPassword(SeedPassword);
                 var now = DateTimeOffset.UtcNow;
-                db.Users.Add(new User { Id = Guid.Parse("e0000001-0001-0001-0001-000000000001"), FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, Role = "Admin", IsDeleted = false, CreatedAt = now });
-                db.Users.Add(new User { Id = Guid.Parse("e0000001-0001-0001-0001-000000000002"), FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, Role = "Viewer", IsDeleted = false, CreatedAt = now });
+                db.Users.Add(new User { Id = Guid.Parse("e0000001-0001-0001-0001-000000000001"), FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, Role = UserRole.Admin, IsDeleted = false, CreatedAt = now });
+                db.Users.Add(new User { Id = Guid.Parse("e0000001-0001-0001-0001-000000000002"), FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, Role = UserRole.Viewer, IsDeleted = false, CreatedAt = now });
                 await db.SaveChangesAsync();
                 return;
             }
@@ -36,7 +36,7 @@ namespace Infra.Seeding
                 await using var transaction = await db.Database.BeginTransactionAsync();
                 try
                 {
-                    if (await db.Teams.IgnoreQueryFilters().AnyAsync())
+                    if (await db.TeamUsers.IgnoreQueryFilters().AnyAsync())
                     {
                         return;
                     }
@@ -78,37 +78,37 @@ namespace Infra.Seeding
                         CreatedAt = now
                     });
 
-                    // Teams (4)
+                    // Teams (4) - using TeamUser entities
                     var team1Id = Guid.Parse("c0000001-0001-0001-0001-000000000001");
                     var team2Id = Guid.Parse("c0000001-0001-0001-0001-000000000002");
                     var team3Id = Guid.Parse("c0000001-0001-0001-0001-000000000003");
                     var team4Id = Guid.Parse("c0000001-0001-0001-0001-000000000004");
 
                     var hashedSeed = HashPassword(SeedPassword);
-                    var teams = new[]
+                    var teamUsers = new[]
                     {
-                        new Team { Id = team1Id, Name = "Red FC", Username = "red_fc", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupAId },
-                        new Team { Id = team2Id, Name = "Blue United", Username = "blue_united", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupAId },
-                        new Team { Id = team3Id, Name = "Green Rangers", Username = "green_rangers", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupBId },
-                        new Team { Id = team4Id, Name = "Yellow Strikers", Username = "yellow_strikers", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupBId }
+                        new TeamUser { Id = team1Id, FullName = "Red FC", Username = "red_fc", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupAId },
+                        new TeamUser { Id = team2Id, FullName = "Blue United", Username = "blue_united", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupAId },
+                        new TeamUser { Id = team3Id, FullName = "Green Rangers", Username = "green_rangers", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupBId },
+                        new TeamUser { Id = team4Id, FullName = "Yellow Strikers", Username = "yellow_strikers", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now, GroupId = groupBId }
                     };
-                    foreach (var t in teams)
-                        db.Teams.Add(t);
+                    foreach (var t in teamUsers)
+                        db.TeamUsers.Add(t);
 
                     // Admin and Viewer users (same password as seed: Test123!)
                     var adminId = Guid.Parse("e0000001-0001-0001-0001-000000000001");
                     var viewerId = Guid.Parse("e0000001-0001-0001-0001-000000000002");
-                    db.Users.Add(new User { Id = adminId, FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, Role = "Admin", IsDeleted = false, CreatedAt = now });
-                    db.Users.Add(new User { Id = viewerId, FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, Role = "Viewer", IsDeleted = false, CreatedAt = now });
+                    db.Users.Add(new User { Id = adminId, FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, Role = UserRole.Admin, IsDeleted = false, CreatedAt = now });
+                    db.Users.Add(new User { Id = viewerId, FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, Role = UserRole.Viewer, IsDeleted = false, CreatedAt = now });
 
                     // Tournament-Teams many-to-many
-                    foreach (var t in teams)
+                    foreach (var t in teamUsers)
                         t.Tournaments.Add(tournament);
 
                     // Players (a few per team)
                     var playerIds = new List<Guid>();
                     int jersey = 1;
-                    foreach (var team in teams)
+                    foreach (var team in teamUsers)
                     {
                         for (int i = 0; i < 5; i++)
                         {
@@ -117,7 +117,7 @@ namespace Infra.Seeding
                             db.Players.Add(new Player
                             {
                                 Id = pid,
-                                FullName = $"{team.Name} Player {i + 1}",
+                                FullName = $"{team.FullName} Player {i + 1}",
                                 NickName = $"P{i + 1}",
                                 Position = (PlayerPosition)(i % 4),
                                 JerseyNumber = jersey++,

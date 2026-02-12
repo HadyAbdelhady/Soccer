@@ -14,32 +14,36 @@ namespace Infra.DBContext
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Team>()
+            // TPT Configuration for BaseUser hierarchy
+            modelBuilder.Entity<BaseUser>()
                 .HasQueryFilter(x => !x.IsDeleted)
-                .HasIndex(t => t.Username)
+                .HasIndex(u => u.Username)
                 .IsUnique();
 
-            modelBuilder.Entity<Team>()
-                .HasQueryFilter(x => !x.IsDeleted)
+            // TeamUser specific relationships (was Team entity)
+            modelBuilder.Entity<TeamUser>()
                 .HasMany(t => t.Tournaments)
                 .WithMany(t => t.Teams)
                 .UsingEntity(j => j
                     .ToTable("TeamTournament")
                     .HasKey("TeamsId", "TournamentsId"));
 
-            modelBuilder.Entity<Match>()
-                .HasQueryFilter(x => !x.IsDeleted)
-                .HasOne(m => m.HomeTeam)
-                .WithMany(t => t.HomeMatches)
+            modelBuilder.Entity<TeamUser>()
+                .HasMany(t => t.HomeMatches)
+                .WithOne(m => m.HomeTeam)
                 .HasForeignKey(m => m.HomeTeamId)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<Match>()
-                .HasQueryFilter(x => !x.IsDeleted)
-                .HasOne(m => m.AwayTeam)
-                .WithMany(t => t.AwayMatches)
+            modelBuilder.Entity<TeamUser>()
+                .HasMany(t => t.AwayMatches)
+                .WithOne(m => m.AwayTeam)
                 .HasForeignKey(m => m.AwayTeamId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TeamUser>()
+                .HasOne(t => t.Group)
+                .WithMany(g => g.Teams)
+                .HasForeignKey(t => t.GroupId);
 
             modelBuilder.Entity<MatchCard>()
                 .HasQueryFilter(x => !x.IsDeleted)
@@ -114,12 +118,15 @@ namespace Infra.DBContext
                 .HasForeignKey(l => l.PlayerId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<User>()
-                .HasQueryFilter(x => !x.IsDeleted)
-                .HasIndex(u => u.Username)
-                .IsUnique();
-        }
+            }
 
+        // TPH User entities
+        public DbSet<BaseUser> BaseUsers => Set<BaseUser>();
+        public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
+        public DbSet<WatcherUser> WatcherUsers => Set<WatcherUser>();
+        public DbSet<TeamUser> TeamUsers => Set<TeamUser>();
+        
+        // Legacy entities (will be removed after migration)
         public DbSet<Team> Teams => Set<Team>();
         public DbSet<User> Users => Set<User>();
         public DbSet<Player> Players => Set<Player>();

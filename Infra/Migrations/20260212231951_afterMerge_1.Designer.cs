@@ -4,6 +4,7 @@ using Infra.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infra.Migrations
 {
     [DbContext(typeof(SoccerDbContext))]
-    partial class SoccerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260212231951_afterMerge_1")]
+    partial class afterMerge_1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,46 +24,6 @@ namespace Infra.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("Data.Entities.BaseUser", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("FullName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("HashedPassword")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Username")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Username")
-                        .IsUnique();
-
-                    b.ToTable("BaseUsers");
-
-                    b.UseTptMappingStrategy();
-                });
 
             modelBuilder.Entity("Data.Entities.Group", b =>
                 {
@@ -135,12 +98,6 @@ namespace Infra.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid?>("TeamId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("TeamId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("TournamentId")
                         .HasColumnType("uniqueidentifier");
 
@@ -157,10 +114,6 @@ namespace Infra.Migrations
                     b.HasIndex("GroupId");
 
                     b.HasIndex("HomeTeamId");
-
-                    b.HasIndex("TeamId");
-
-                    b.HasIndex("TeamId1");
 
                     b.HasIndex("TournamentId");
 
@@ -330,17 +283,12 @@ namespace Infra.Migrations
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("TeamId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
 
                     b.HasIndex("TeamId");
-
-                    b.HasIndex("TeamId1");
 
                     b.ToTable("Players");
                 });
@@ -418,9 +366,6 @@ namespace Infra.Migrations
                     b.Property<DateTime>("StartDateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("TeamId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<int?>("TeamsToAdvance")
                         .HasColumnType("int");
 
@@ -432,8 +377,6 @@ namespace Infra.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TeamId");
 
                     b.ToTable("Tournaments");
                 });
@@ -480,7 +423,7 @@ namespace Infra.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("TeamUserTournament", b =>
+            modelBuilder.Entity("TeamTournament", b =>
                 {
                     b.Property<Guid>("TeamsId")
                         .HasColumnType("uniqueidentifier");
@@ -493,32 +436,6 @@ namespace Infra.Migrations
                     b.HasIndex("TournamentsId");
 
                     b.ToTable("TeamTournament", (string)null);
-                });
-
-            modelBuilder.Entity("Data.Entities.AdminUser", b =>
-                {
-                    b.HasBaseType("Data.Entities.BaseUser");
-
-                    b.ToTable("AdminUsers");
-                });
-
-            modelBuilder.Entity("Data.Entities.TeamUser", b =>
-                {
-                    b.HasBaseType("Data.Entities.BaseUser");
-
-                    b.Property<Guid?>("GroupId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasIndex("GroupId");
-
-                    b.ToTable("TeamUsers");
-                });
-
-            modelBuilder.Entity("Data.Entities.WatcherUser", b =>
-                {
-                    b.HasBaseType("Data.Entities.BaseUser");
-
-                    b.ToTable("WatcherUsers");
                 });
 
             modelBuilder.Entity("Data.Entities.Group", b =>
@@ -534,7 +451,7 @@ namespace Infra.Migrations
 
             modelBuilder.Entity("Data.Entities.Match", b =>
                 {
-                    b.HasOne("Data.Entities.TeamUser", "AwayTeam")
+                    b.HasOne("Data.Entities.Team", "AwayTeam")
                         .WithMany("AwayMatches")
                         .HasForeignKey("AwayTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
@@ -543,18 +460,10 @@ namespace Infra.Migrations
                         .WithMany("Matches")
                         .HasForeignKey("GroupId");
 
-                    b.HasOne("Data.Entities.TeamUser", "HomeTeam")
+                    b.HasOne("Data.Entities.Team", "HomeTeam")
                         .WithMany("HomeMatches")
                         .HasForeignKey("HomeTeamId")
                         .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Data.Entities.Team", null)
-                        .WithMany("AwayMatches")
-                        .HasForeignKey("TeamId");
-
-                    b.HasOne("Data.Entities.Team", null)
-                        .WithMany("HomeMatches")
-                        .HasForeignKey("TeamId1");
 
                     b.HasOne("Data.Entities.Tournament", "Tournament")
                         .WithMany("Matches")
@@ -585,7 +494,7 @@ namespace Infra.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Data.Entities.TeamUser", "Team")
+                    b.HasOne("Data.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -612,7 +521,7 @@ namespace Infra.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Data.Entities.TeamUser", "Team")
+                    b.HasOne("Data.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -639,7 +548,7 @@ namespace Infra.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
-                    b.HasOne("Data.Entities.TeamUser", "Team")
+                    b.HasOne("Data.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.NoAction)
@@ -654,15 +563,11 @@ namespace Infra.Migrations
 
             modelBuilder.Entity("Data.Entities.Player", b =>
                 {
-                    b.HasOne("Data.Entities.TeamUser", "Team")
+                    b.HasOne("Data.Entities.Team", "Team")
                         .WithMany("Players")
                         .HasForeignKey("TeamId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Data.Entities.Team", null)
-                        .WithMany("Players")
-                        .HasForeignKey("TeamId1");
 
                     b.Navigation("Team");
                 });
@@ -670,22 +575,15 @@ namespace Infra.Migrations
             modelBuilder.Entity("Data.Entities.Team", b =>
                 {
                     b.HasOne("Data.Entities.Group", "Group")
-                        .WithMany()
+                        .WithMany("Teams")
                         .HasForeignKey("GroupId");
 
                     b.Navigation("Group");
                 });
 
-            modelBuilder.Entity("Data.Entities.Tournament", b =>
+            modelBuilder.Entity("TeamTournament", b =>
                 {
                     b.HasOne("Data.Entities.Team", null)
-                        .WithMany("Tournaments")
-                        .HasForeignKey("TeamId");
-                });
-
-            modelBuilder.Entity("TeamUserTournament", b =>
-                {
-                    b.HasOne("Data.Entities.TeamUser", null)
                         .WithMany()
                         .HasForeignKey("TeamsId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -694,39 +592,6 @@ namespace Infra.Migrations
                     b.HasOne("Data.Entities.Tournament", null)
                         .WithMany()
                         .HasForeignKey("TournamentsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Data.Entities.AdminUser", b =>
-                {
-                    b.HasOne("Data.Entities.BaseUser", null)
-                        .WithOne()
-                        .HasForeignKey("Data.Entities.AdminUser", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
-            modelBuilder.Entity("Data.Entities.TeamUser", b =>
-                {
-                    b.HasOne("Data.Entities.Group", "Group")
-                        .WithMany("Teams")
-                        .HasForeignKey("GroupId");
-
-                    b.HasOne("Data.Entities.BaseUser", null)
-                        .WithOne()
-                        .HasForeignKey("Data.Entities.TeamUser", "Id")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Group");
-                });
-
-            modelBuilder.Entity("Data.Entities.WatcherUser", b =>
-                {
-                    b.HasOne("Data.Entities.BaseUser", null)
-                        .WithOne()
-                        .HasForeignKey("Data.Entities.WatcherUser", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
@@ -761,8 +626,6 @@ namespace Infra.Migrations
                     b.Navigation("HomeMatches");
 
                     b.Navigation("Players");
-
-                    b.Navigation("Tournaments");
                 });
 
             modelBuilder.Entity("Data.Entities.Tournament", b =>
@@ -770,15 +633,6 @@ namespace Infra.Migrations
                     b.Navigation("Groups");
 
                     b.Navigation("Matches");
-                });
-
-            modelBuilder.Entity("Data.Entities.TeamUser", b =>
-                {
-                    b.Navigation("AwayMatches");
-
-                    b.Navigation("HomeMatches");
-
-                    b.Navigation("Players");
                 });
 #pragma warning restore 612, 618
         }
