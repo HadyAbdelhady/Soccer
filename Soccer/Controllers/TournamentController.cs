@@ -53,6 +53,22 @@ namespace Soccer.Controllers
             return result;
         }
 
+        [HttpPost("{id}/matches/regenerate")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GenerateTournamentMatchesResponse>> RegenerateMatches(Guid id)
+        {
+            var result = await tournamentService.RegenerateMatchesAsync(id);
+            return result;
+        }
+
+        [HttpPost("{id}/reset-schedule")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GenerateTournamentMatchesResponse>> ResetSchedule(Guid id)
+        {
+            var result = await tournamentService.ResetScheduleAsync(id);
+            return result;
+        }
+
         [HttpPatch]
         [TranslateResultToActionResult]
         public async Task<Result<UpdateTournamentResponse>> UpdateTournament(UpdateTournamentRequest request)

@@ -375,6 +375,97 @@ namespace Business.Services.Tournaments
                 return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Unsupported tournament type for match draw", ErrorType.BadRequest);
             }
 
+            return await SaveAndBuildMatchesResponse(tournament, beforeCount);
+        }
+
+        public async Task<Result<GenerateTournamentMatchesResponse>> RegenerateMatchesAsync(Guid tournamentId)
+        {
+            var tournament = await unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Teams)
+                .Include(t => t.Groups).ThenInclude(g => g.Teams)
+                .Include(t => t.Matches)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
+
+            if (tournament == null)
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+            }
+
+            if (!tournament.Teams.Any())
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Tournament has no teams to generate matches for", ErrorType.BadRequest);
+            }
+
+            if (!tournament.Groups.Any())
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Generate groups before generating matches", ErrorType.BadRequest);
+            }
+
+            // Do not allow reset if any match has already started/finished
+            if (tournament.Matches.Any(m => m.Status != MatchStatus.SCHEDULED))
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Cannot regenerate matches after matches have started.", ErrorType.BadRequest);
+            }
+
+            // Soft-delete existing matches (SoftDeleteInterceptor will set IsDeleted)
+            if (tournament.Matches.Any())
+            {
+                unitOfWork.Repository<Match>().RemoveRange(tournament.Matches);
+                tournament.Matches.Clear();
+                await unitOfWork.SaveChangesAsync();
+            }
+
+            int beforeCount = 0;
+
+            if (tournament.Type == TournamentType.SINGLE_GROUP)
+            {
+                if (tournament.Groups.Count != 1)
+                {
+                    return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Single-group tournaments must have exactly one group", ErrorType.BadRequest);
+                }
+
+                var group = tournament.Groups.First();
+                var groupTeams = group.Teams.ToList();
+
+                if (groupTeams.Count < 2)
+                {
+                    return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Group must contain at least two teams to generate matches", ErrorType.BadRequest);
+                }
+
+                GenerateSingleGroupDraw(tournament, groupTeams, group);
+            }
+            else if (tournament.Type == TournamentType.MULTI_GROUP_KNOCKOUT)
+            {
+                GenerateMultiGroupKnockoutDraw(tournament);
+            }
+            else
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Unsupported tournament type for match draw", ErrorType.BadRequest);
+            }
+
+            return await SaveAndBuildMatchesResponse(tournament, beforeCount);
+        }
+
+        public async Task<Result<GenerateTournamentMatchesResponse>> ResetScheduleAsync(Guid tournamentId)
+        {
+            // High-level orchestration: regenerate groups then matches in one call.
+            // 1) Regenerate groups based on current teams
+            var groupsResult = await RegenerateGroupsAsync(tournamentId);
+            if (!groupsResult.IsSuccess)
+            {
+                return Result<GenerateTournamentMatchesResponse>.FailureStatusCode(
+                    groupsResult.Error ?? "Failed to regenerate groups before resetting schedule.",
+                    groupsResult.ErrorType);
+            }
+
+            // 2) Regenerate matches for the new groups
+            var matchesResult = await RegenerateMatchesAsync(tournamentId);
+            return matchesResult;
+        }
+
+        private async Task<Result<GenerateTournamentMatchesResponse>> SaveAndBuildMatchesResponse(Tournament tournament, int beforeCount)
+        {
             // Explicitly add new matches so EF tracks them as Added (INSERT). Relying only on
             // tournament.Matches.Add(match) can leave them in Modified state and cause
             // DbUpdateConcurrencyException (UPDATE affecting 0 rows).

@@ -12,6 +12,8 @@ namespace Business.Services.Tournaments
         Task<Result<GenerateTournamentGroupsResponse>> GenerateGroupsAsync(Guid tournamentId);
         Task<Result<RegenerateGroupsResponse>> RegenerateGroupsAsync(Guid tournamentId);
         Task<Result<GenerateTournamentMatchesResponse>> GenerateMatchesAsync(Guid tournamentId);
+        Task<Result<GenerateTournamentMatchesResponse>> RegenerateMatchesAsync(Guid tournamentId);
+        Task<Result<GenerateTournamentMatchesResponse>> ResetScheduleAsync(Guid tournamentId);
         Task<Result<bool>> ResolvePlaceholders(Guid tournamentId);
     }
 }
