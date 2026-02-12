@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infra.Migrations
 {
     [DbContext(typeof(SoccerDbContext))]
-    [Migration("20260211004234_first")]
-    partial class first
+    [Migration("20260212002603_sec")]
+    partial class sec
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -85,7 +85,7 @@ namespace Infra.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("KickoffTime")
+                    b.Property<DateTime?>("KickoffTime")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("RoundNumber")

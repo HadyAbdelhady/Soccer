@@ -88,12 +88,12 @@ namespace Soccer
             var app = builder.Build();
 
             // Ensure database is migrated and seed bogus data when empty (for testing)
-            using (var scope = app.Services.CreateScope())
-            {
-                var db = scope.ServiceProvider.GetRequiredService<SoccerDbContext>();
-                await db.Database.MigrateAsync();
-                await DataSeeder.SeedIfEmptyAsync(db);
-            }
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var db = scope.ServiceProvider.GetRequiredService<SoccerDbContext>();
+            //    await db.Database.MigrateAsync();
+            //    await DataSeeder.SeedIfEmptyAsync(db);
+            //}
 
             app.UseSwagger();
             app.UseSwaggerUI(c =>

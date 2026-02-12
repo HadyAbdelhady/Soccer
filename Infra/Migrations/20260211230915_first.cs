@@ -87,7 +87,7 @@ namespace Infra.Migrations
                     HomeTeamPlaceholder = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AwayTeamPlaceholder = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     RoundNumber = table.Column<int>(type: "int", nullable: false),
-                    KickoffTime = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    KickoffTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     FinalWhistleTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     TournamentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),

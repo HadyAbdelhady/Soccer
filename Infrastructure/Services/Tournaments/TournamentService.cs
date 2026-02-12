@@ -1,3 +1,4 @@
+using Azure;
 using Business.DTOs.Tournaments;
 using Business.Services.Standings;
 using Data.Entities;
@@ -40,7 +41,7 @@ namespace Business.Services.Tournaments
             return Result<CreateTournamentResponse>.Success(result);
         }
 
-        public async Task<Result<AddTeamToTournamentResponse>> AddTeamToTournament(AddTeamToTournamentRequest request)
+        public async Task<Result<List<AddTeamToTournamentResponse>>> AddTeamsToTournament(AddTeamsToTournamentRequest request)
         {
             var tournament = await unitOfWork.Repository<Tournament>()
                 .GetAll()
@@ -49,38 +50,43 @@ namespace Business.Services.Tournaments
 
             if (tournament == null)
             {
-                return Result<AddTeamToTournamentResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+                return Result<List<AddTeamToTournamentResponse>>.FailureStatusCode(
+                    "Tournament not found", ErrorType.NotFound);
             }
 
-            var team = await unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
+            var addedTeams = new List<AddTeamToTournamentResponse>();
 
-            if (team == null)
+            foreach (var teamId in request.TeamIds)
             {
-                return Result<AddTeamToTournamentResponse>.FailureStatusCode("Team not found", ErrorType.NotFound);
+                var team = await unitOfWork.Repository<Team>().GetByIdAsync(teamId);
+                if (team == null) continue;
+
+                if (tournament.Teams.Any(t => t.Id == teamId)) continue;
+
+                tournament.Teams.Add(team);
+
+                addedTeams.Add(new AddTeamToTournamentResponse
+                {
+                    TournamentId = tournament.Id,
+                    TeamId = team.Id,
+                    TeamName = team.Name,
+                    Message = "Team added successfully"
+                });
             }
 
-            if (tournament.Teams.Any(t => t.Id == request.TeamId))
+            if (!addedTeams.Any())
             {
-                return Result<AddTeamToTournamentResponse>.FailureStatusCode("Team is already enrolled in this tournament", ErrorType.BadRequest);
+                return Result<List<AddTeamToTournamentResponse>>.FailureStatusCode(
+                    "No valid new teams to add. Either IDs are invalid or teams already exist in this tournament.",
+                    ErrorType.BadRequest);
             }
 
-            tournament.Teams.Add(team);
             tournament.UpdatedAt = DateTimeOffset.UtcNow;
-
             unitOfWork.Repository<Tournament>().Update(tournament);
             await unitOfWork.SaveChangesAsync();
 
-            var response = new AddTeamToTournamentResponse
-            {
-                TournamentId = tournament.Id,
-                TeamId = team.Id,
-                TeamName = team.Name,
-                Message = "Team added to tournament successfully"
-            };
-
-            return Result<AddTeamToTournamentResponse>.Success(response);
+            return Result<List<AddTeamToTournamentResponse>>.Success(addedTeams);
         }
-
 
         public async Task<Result<GenerateTournamentGroupsResponse>> GenerateGroupsAsync(Guid tournamentId)
         {
@@ -88,22 +94,17 @@ namespace Business.Services.Tournaments
                 .GetAll()
                 .Include(t => t.Teams)
                 .Include(t => t.Groups)
+                .AsSplitQuery()
                 .FirstOrDefaultAsync(t => t.Id == tournamentId);
 
             if (tournament == null)
-            {
                 return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
-            }
 
             if (tournament.Teams == null || !tournament.Teams.Any())
-            {
                 return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Tournament has no teams to draw into groups", ErrorType.BadRequest);
-            }
 
             if (tournament.Groups.Any())
-            {
                 return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Groups already exist for this tournament", ErrorType.BadRequest);
-            }
 
             var createdGroups = new List<Group>();
 
@@ -114,62 +115,55 @@ namespace Business.Services.Tournaments
                 var group = new Group
                 {
                     Id = Guid.NewGuid(),
-                    Name = "Group A",
+                    Name = "LA LEAGUE",
                     TournamentId = tournament.Id,
                     Tournament = tournament,
-                    CreatedAt = DateTimeOffset.UtcNow
+                    CreatedAt = DateTimeOffset.UtcNow,
+                    Teams = shuffledTeams
                 };
-
-                group.Teams = shuffledTeams;
-                tournament.Groups.Add(group);
 
                 foreach (var team in shuffledTeams)
                 {
                     team.GroupId = group.Id;
                     team.UpdatedAt = DateTimeOffset.UtcNow;
-                    unitOfWork.Repository<Team>().Update(team);
                 }
 
+                tournament.Groups.Add(group);
                 createdGroups.Add(group);
             }
             else if (tournament.Type == TournamentType.MULTI_GROUP_KNOCKOUT)
             {
                 if (tournament.GroupCount == null || tournament.GroupCount <= 0)
-                {
                     return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("GroupCount must be specified for multi-group tournaments", ErrorType.BadRequest);
-                }
 
                 var teams = tournament.Teams.ToList();
                 if (teams.Count % tournament.GroupCount != 0)
-                {
                     return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Teams cannot be evenly distributed across the configured number of groups", ErrorType.BadRequest);
-                }
 
                 var shuffledTeams = teams.OrderBy(t => Guid.NewGuid()).ToList();
                 int teamsPerGroup = teams.Count / tournament.GroupCount.Value;
 
                 for (int i = 0; i < tournament.GroupCount.Value; i++)
                 {
+                    var groupTeams = shuffledTeams.Skip(i * teamsPerGroup).Take(teamsPerGroup).ToList();
+
                     var group = new Group
                     {
                         Id = Guid.NewGuid(),
                         Name = $"Group {((char)('A' + i))}",
                         TournamentId = tournament.Id,
                         Tournament = tournament,
-                        CreatedAt = DateTimeOffset.UtcNow
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        Teams = groupTeams
                     };
-
-                    var groupTeams = shuffledTeams.Skip(i * teamsPerGroup).Take(teamsPerGroup).ToList();
-                    group.Teams = groupTeams;
-                    tournament.Groups.Add(group);
 
                     foreach (var team in groupTeams)
                     {
                         team.GroupId = group.Id;
                         team.UpdatedAt = DateTimeOffset.UtcNow;
-                        unitOfWork.Repository<Team>().Update(team);
                     }
 
+                    tournament.Groups.Add(group);
                     createdGroups.Add(group);
                 }
             }
@@ -178,26 +172,22 @@ namespace Business.Services.Tournaments
                 return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Unsupported tournament type for group draw", ErrorType.BadRequest);
             }
 
-            unitOfWork.Repository<Tournament>().Update(tournament);
             await unitOfWork.SaveChangesAsync();
 
             var response = new GenerateTournamentGroupsResponse
             {
                 TournamentId = tournament.Id,
                 Message = "Groups generated successfully",
-                Groups = createdGroups
-                    .Select(g => new GeneratedGroupDto
-                    {
-                        Id = g.Id,
-                        Name = g.Name,
-                        TeamCount = g.Teams.Count
-                    })
-                    .ToList()
+                Groups = createdGroups.Select(g => new GeneratedGroupDto
+                {
+                    Id = g.Id,
+                    Name = g.Name,
+                    TeamCount = g.Teams.Count
+                }).ToList()
             };
 
             return Result<GenerateTournamentGroupsResponse>.Success(response);
         }
-
         public async Task<Result<RegenerateGroupsResponse>> RegenerateGroupsAsync(Guid tournamentId)
         {
             var tournament = await unitOfWork.Repository<Tournament>()
@@ -319,7 +309,6 @@ namespace Business.Services.Tournaments
 
             return Result<RegenerateGroupsResponse>.Success(response);
         }
-
 
         public async Task<Result<GenerateTournamentMatchesResponse>> GenerateMatchesAsync(Guid tournamentId)
         {
@@ -535,7 +524,7 @@ namespace Business.Services.Tournaments
             };
             tournament.Matches.Add(match);
         }
-
+        
         private void AddPlaceholderMatch(Tournament tournament, string homePlaceholder, string awayPlaceholder, int round, string stageName)
         {
             var match = new Match
@@ -553,7 +542,6 @@ namespace Business.Services.Tournaments
             };
             tournament.Matches.Add(match);
         }
-
 
         public async Task<Result<bool>> ResolvePlaceholders(Guid tournamentId)
         {

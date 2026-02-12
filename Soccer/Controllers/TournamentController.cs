@@ -22,17 +22,11 @@ namespace Soccer.Controllers
             return result;
         }
 
-        [HttpPost("{tournamentId}/teams")]
+        [HttpPost("addTeamsToTournament")]
         [TranslateResultToActionResult]
-        public async Task<Result<AddTeamToTournamentResponse>> AddTeamToTournament(Guid tournamentId, [FromBody] Guid teamId)
+        public async Task<Result<List<AddTeamToTournamentResponse>>> AddTeamsToTournament([FromBody] AddTeamsToTournamentRequest request)
         {
-            var request = new AddTeamToTournamentRequest
-            {
-                TournamentId = tournamentId,
-                TeamId = teamId
-            };
-            var result = await tournamentService.AddTeamToTournament(request);
-            return result;
+            return await tournamentService.AddTeamsToTournament(request);
         }
 
         [HttpPost("{id}/groups/draw")]

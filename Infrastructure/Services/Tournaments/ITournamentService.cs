@@ -8,7 +8,7 @@ namespace Business.Services.Tournaments
         Task<Result<CreateTournamentResponse>> CreateTournament(CreateTournamentRequest request);
         Task<Result<UpdateTournamentResponse>> UpdateTournament(UpdateTournamentRequest request);
         Task<Result<DeleteTournamentResponse>> DeleteTournament(Guid id);
-        Task<Result<AddTeamToTournamentResponse>> AddTeamToTournament(AddTeamToTournamentRequest request);
+        Task<Result<List<AddTeamToTournamentResponse>>> AddTeamsToTournament(AddTeamsToTournamentRequest request);
         Task<Result<GenerateTournamentGroupsResponse>> GenerateGroupsAsync(Guid tournamentId);
         Task<Result<RegenerateGroupsResponse>> RegenerateGroupsAsync(Guid tournamentId);
         Task<Result<GenerateTournamentMatchesResponse>> GenerateMatchesAsync(Guid tournamentId);
