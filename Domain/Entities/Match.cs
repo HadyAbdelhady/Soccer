@@ -37,6 +37,7 @@ namespace Data.Entities
 
         public ICollection<MatchCard> Cards { get; set; } = [];
         public ICollection<MatchGoal> Goals { get; set; } = [];
+        public ICollection<MatchLineup> Lineups { get; set; } = [];
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

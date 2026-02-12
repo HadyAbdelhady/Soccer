@@ -148,6 +148,64 @@ namespace Business.Services.Matches
             });
         }
 
+        public async Task<Result<SetMatchLineupResponse>> SetMatchLineup(Guid matchId, SetMatchLineupRequest request)
+        {
+            var match = await unitOfWork.Repository<Match>()
+                .GetAll()
+                .FirstOrDefaultAsync(m => m.Id == matchId);
+
+            if (match == null)
+            {
+                return Result<SetMatchLineupResponse>.FailureStatusCode("Match not found", ErrorType.NotFound);
+            }
+
+            if (request.Players == null || !request.Players.Any())
+            {
+                return Result<SetMatchLineupResponse>.FailureStatusCode("No lineup players provided", ErrorType.BadRequest);
+            }
+
+            // Clear existing lineup entries for this match (soft delete via interceptor)
+            var existingLineups = await unitOfWork.Repository<MatchLineup>()
+                .Find(l => l.MatchId == matchId)
+                .ToListAsync();
+
+            if (existingLineups.Any())
+            {
+                unitOfWork.Repository<MatchLineup>().RemoveRange(existingLineups);
+            }
+
+            foreach (var p in request.Players)
+            {
+                var lineup = new MatchLineup
+                {
+                    Id = Guid.NewGuid(),
+                    MatchId = matchId,
+                    TeamId = p.TeamId,
+                    PlayerId = p.PlayerId,
+                    IsStarting = p.IsStarting,
+                    ShirtNumber = p.ShirtNumber,
+                    Position = p.Position,
+                    CreatedAt = DateTimeOffset.UtcNow
+                };
+
+                await unitOfWork.Repository<MatchLineup>().AddAsync(lineup);
+            }
+
+            await unitOfWork.SaveChangesAsync();
+
+            var starting = request.Players.Count(p => p.IsStarting);
+            var bench = request.Players.Count - starting;
+
+            var response = new SetMatchLineupResponse
+            {
+                MatchId = matchId,
+                StartingCount = starting,
+                BenchCount = bench
+            };
+
+            return Result<SetMatchLineupResponse>.Success(response);
+        }
+
         public async Task<Result<UpdateMatchScheduleResponse>> UpdateMatchSchedule(Guid matchId, UpdateMatchScheduleRequest request)
         {
             var match = await unitOfWork.Repository<Match>().GetByIdAsync(matchId);
@@ -181,6 +239,71 @@ namespace Business.Services.Matches
             };
 
             return Result<UpdateMatchScheduleResponse>.Success(response);
+        }
+
+        public async Task<Result<GetMatchLineupResponse>> GetMatchLineup(Guid matchId)
+        {
+            var match = await unitOfWork.Repository<Match>()
+                .GetAll()
+                .Include(m => m.Lineups)
+                .FirstOrDefaultAsync(m => m.Id == matchId);
+
+            if (match == null)
+            {
+                return Result<GetMatchLineupResponse>.FailureStatusCode("Match not found", ErrorType.NotFound);
+            }
+
+            var players = match.Lineups
+                .Select(l => new LineupPlayerDto
+                {
+                    PlayerId = l.PlayerId,
+                    TeamId = l.TeamId,
+                    IsStarting = l.IsStarting,
+                    ShirtNumber = l.ShirtNumber,
+                    Position = l.Position
+                })
+                .ToList();
+
+            var response = new GetMatchLineupResponse
+            {
+                MatchId = matchId,
+                Players = players
+            };
+
+            return Result<GetMatchLineupResponse>.Success(response);
+        }
+
+        public async Task<Result<GetMatchLineupResponse>> GetMatchLineupForTeam(Guid matchId, Guid teamId)
+        {
+            var match = await unitOfWork.Repository<Match>()
+                .GetAll()
+                .Include(m => m.Lineups)
+                .FirstOrDefaultAsync(m => m.Id == matchId);
+
+            if (match == null)
+            {
+                return Result<GetMatchLineupResponse>.FailureStatusCode("Match not found", ErrorType.NotFound);
+            }
+
+            var players = match.Lineups
+                .Where(l => l.TeamId == teamId)
+                .Select(l => new LineupPlayerDto
+                {
+                    PlayerId = l.PlayerId,
+                    TeamId = l.TeamId,
+                    IsStarting = l.IsStarting,
+                    ShirtNumber = l.ShirtNumber,
+                    Position = l.Position
+                })
+                .ToList();
+
+            var response = new GetMatchLineupResponse
+            {
+                MatchId = matchId,
+                Players = players
+            };
+
+            return Result<GetMatchLineupResponse>.Success(response);
         }
     }
 }

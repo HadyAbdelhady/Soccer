@@ -94,6 +94,25 @@ namespace Infra.DBContext
             modelBuilder.Entity<Tournament>()
                 .Property(t => t.Legs)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<MatchLineup>()
+                .HasQueryFilter(x => !x.IsDeleted)
+                .HasOne(l => l.Match)
+                .WithMany(m => m.Lineups)
+                .HasForeignKey(l => l.MatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MatchLineup>()
+                .HasOne(l => l.Team)
+                .WithMany()
+                .HasForeignKey(l => l.TeamId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<MatchLineup>()
+                .HasOne(l => l.Player)
+                .WithMany()
+                .HasForeignKey(l => l.PlayerId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
 
         public DbSet<Team> Teams => Set<Team>();
@@ -103,6 +122,7 @@ namespace Infra.DBContext
         public DbSet<MatchCard> MatchCards => Set<MatchCard>();
         public DbSet<MatchGoal> MatchGoals => Set<MatchGoal>();
         public DbSet<Group> Groups => Set<Group>();
+        public DbSet<MatchLineup> MatchLineups => Set<MatchLineup>();
 
 
     }

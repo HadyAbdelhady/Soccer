@@ -35,5 +35,29 @@ namespace Soccer.Controllers
             var result = await matchService.UpdateMatchSchedule(id, request);
             return result;
         }
+
+        [HttpPost("{id}/lineup")]
+        [TranslateResultToActionResult]
+        public async Task<Result<SetMatchLineupResponse>> SetLineup(Guid id, SetMatchLineupRequest request)
+        {
+            var result = await matchService.SetMatchLineup(id, request);
+            return result;
+        }
+
+        [HttpGet("{id}/lineup")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetMatchLineupResponse>> GetLineup(Guid id)
+        {
+            var result = await matchService.GetMatchLineup(id);
+            return result;
+        }
+
+        [HttpGet("{id}/lineup/{teamId}")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetMatchLineupResponse>> GetLineupForTeam(Guid id, Guid teamId)
+        {
+            var result = await matchService.GetMatchLineupForTeam(id, teamId);
+            return result;
+        }
     }
 }

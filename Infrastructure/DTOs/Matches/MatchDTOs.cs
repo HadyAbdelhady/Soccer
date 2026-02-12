@@ -74,4 +74,32 @@ namespace Business.DTOs.Matches
         public Guid MatchId { get; set; }
         public string Message { get; set; } = "Created Successfully";
     }
+
+    public class LineupPlayerDto
+    {
+        public Guid PlayerId { get; set; }
+        public Guid TeamId { get; set; }
+        public bool IsStarting { get; set; }
+        public int? ShirtNumber { get; set; }
+        public string? Position { get; set; }
+    }
+
+    public class SetMatchLineupRequest
+    {
+        public List<LineupPlayerDto> Players { get; set; } = [];
+    }
+
+    public class SetMatchLineupResponse
+    {
+        public Guid MatchId { get; set; }
+        public int StartingCount { get; set; }
+        public int BenchCount { get; set; }
+        public string Message { get; set; } = "Lineup set successfully";
+    }
+
+    public class GetMatchLineupResponse
+    {
+        public Guid MatchId { get; set; }
+        public List<LineupPlayerDto> Players { get; set; } = [];
+    }
 }

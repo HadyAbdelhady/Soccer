@@ -8,5 +8,8 @@ namespace Business.Services.Matches
         Task<Result<MatchResponse>> CreateMatch(CreateMatchRequest request);
         Task<Result<SubmitResultResponse>> SubmitMatchResult(Guid matchId, SubmitResultRequest request);
         Task<Result<UpdateMatchScheduleResponse>> UpdateMatchSchedule(Guid matchId, UpdateMatchScheduleRequest request);
+        Task<Result<SetMatchLineupResponse>> SetMatchLineup(Guid matchId, SetMatchLineupRequest request);
+        Task<Result<GetMatchLineupResponse>> GetMatchLineup(Guid matchId);
+        Task<Result<GetMatchLineupResponse>> GetMatchLineupForTeam(Guid matchId, Guid teamId);
     }
 }
