@@ -4,6 +4,7 @@ using Infra.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infra.Migrations
 {
     [DbContext(typeof(SoccerDbContext))]
-    partial class SoccerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260211001523_AddUserEntity")]
+    partial class AddUserEntity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -58,11 +61,8 @@ namespace Infra.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("AwayTeamId")
+                    b.Property<Guid>("AwayTeamId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("AwayTeamPlaceholder")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -73,20 +73,14 @@ namespace Infra.Migrations
                     b.Property<Guid?>("GroupId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("HomeTeamId")
+                    b.Property<Guid>("HomeTeamId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("HomeTeamPlaceholder")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime?>("KickoffTime")
+                    b.Property<DateTime>("KickoffTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("RoundNumber")
-                        .HasColumnType("int");
 
                     b.Property<int>("StageType")
                         .HasColumnType("int");
@@ -201,50 +195,6 @@ namespace Infra.Migrations
                     b.ToTable("MatchGoals");
                 });
 
-            modelBuilder.Entity("Data.Entities.MatchLineup", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsStarting")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("MatchId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("PlayerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Position")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("ShirtNumber")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset?>("UpdatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MatchId");
-
-                    b.HasIndex("PlayerId");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("MatchLineups");
-                });
-
             modelBuilder.Entity("Data.Entities.Player", b =>
                 {
                     b.Property<Guid>("Id")
@@ -345,15 +295,8 @@ namespace Infra.Migrations
                     b.Property<DateTime>("EndDateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("GroupCount")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<string>("Legs")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -362,13 +305,6 @@ namespace Infra.Migrations
 
                     b.Property<DateTime>("StartDateTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("TeamsToAdvance")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTimeOffset?>("UpdatedAt")
                         .HasColumnType("datetimeoffset");
@@ -452,7 +388,8 @@ namespace Infra.Migrations
                     b.HasOne("Data.Entities.Team", "AwayTeam")
                         .WithMany("AwayMatches")
                         .HasForeignKey("AwayTeamId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Data.Entities.Group", "Group")
                         .WithMany("Matches")
@@ -461,7 +398,8 @@ namespace Infra.Migrations
                     b.HasOne("Data.Entities.Team", "HomeTeam")
                         .WithMany("HomeMatches")
                         .HasForeignKey("HomeTeamId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Data.Entities.Tournament", "Tournament")
                         .WithMany("Matches")
@@ -532,33 +470,6 @@ namespace Infra.Migrations
                     b.Navigation("Team");
                 });
 
-            modelBuilder.Entity("Data.Entities.MatchLineup", b =>
-                {
-                    b.HasOne("Data.Entities.Match", "Match")
-                        .WithMany("Lineups")
-                        .HasForeignKey("MatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Data.Entities.Player", "Player")
-                        .WithMany()
-                        .HasForeignKey("PlayerId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.HasOne("Data.Entities.Team", "Team")
-                        .WithMany()
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Match");
-
-                    b.Navigation("Player");
-
-                    b.Navigation("Team");
-                });
-
             modelBuilder.Entity("Data.Entities.Player", b =>
                 {
                     b.HasOne("Data.Entities.Team", "Team")
@@ -606,8 +517,6 @@ namespace Infra.Migrations
                     b.Navigation("Cards");
 
                     b.Navigation("Goals");
-
-                    b.Navigation("Lineups");
                 });
 
             modelBuilder.Entity("Data.Entities.Player", b =>

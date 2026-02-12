@@ -113,9 +113,15 @@ namespace Infra.DBContext
                 .WithMany()
                 .HasForeignKey(l => l.PlayerId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<User>()
+                .HasQueryFilter(x => !x.IsDeleted)
+                .HasIndex(u => u.Username)
+                .IsUnique();
         }
 
         public DbSet<Team> Teams => Set<Team>();
+        public DbSet<User> Users => Set<User>();
         public DbSet<Player> Players => Set<Player>();
         public DbSet<Match> Matches => Set<Match>();
         public DbSet<Tournament> Tournaments => Set<Tournament>();
