@@ -172,6 +172,14 @@ namespace Business.Services.Tournaments
                 return Result<GenerateTournamentGroupsResponse>.FailureStatusCode("Unsupported tournament type for group draw", ErrorType.BadRequest);
             }
 
+            // Explicitly add new groups so EF tracks them as Added (INSERT). Relying only on
+            // tournament.Groups.Add(group) can leave them in Modified state and cause
+            // DbUpdateConcurrencyException (UPDATE affecting 0 rows).
+            foreach (var g in createdGroups)
+            {
+                await unitOfWork.Repository<Group>().AddAsync(g);
+            }
+
             await unitOfWork.SaveChangesAsync();
 
             var response = new GenerateTournamentGroupsResponse
@@ -365,6 +373,15 @@ namespace Business.Services.Tournaments
             else
             {
                 return Result<GenerateTournamentMatchesResponse>.FailureStatusCode("Unsupported tournament type for match draw", ErrorType.BadRequest);
+            }
+
+            // Explicitly add new matches so EF tracks them as Added (INSERT). Relying only on
+            // tournament.Matches.Add(match) can leave them in Modified state and cause
+            // DbUpdateConcurrencyException (UPDATE affecting 0 rows).
+            var newMatches = tournament.Matches.Skip(beforeCount).ToList();
+            if (newMatches.Count > 0)
+            {
+                await unitOfWork.Repository<Match>().AddRangeAsync(newMatches);
             }
 
             await unitOfWork.SaveChangesAsync();
