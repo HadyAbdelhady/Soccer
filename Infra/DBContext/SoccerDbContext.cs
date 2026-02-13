@@ -127,8 +127,6 @@ namespace Infra.DBContext
         public DbSet<TeamUser> TeamUsers => Set<TeamUser>();
         
         // Legacy entities (will be removed after migration)
-        public DbSet<Team> Teams => Set<Team>();
-        public DbSet<User> Users => Set<User>();
         public DbSet<Player> Players => Set<Player>();
         public DbSet<Match> Matches => Set<Match>();
         public DbSet<Tournament> Tournaments => Set<Tournament>();

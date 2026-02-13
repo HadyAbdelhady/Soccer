@@ -20,12 +20,12 @@ namespace Infra.Seeding
             if (db == null) return;
 
             // If DB already has team users but no users (e.g. after adding User table), seed Admin and Viewer only
-            if (await db.TeamUsers.IgnoreQueryFilters().AnyAsync() && !await db.Users.IgnoreQueryFilters().AnyAsync())
+            if (await db.TeamUsers.IgnoreQueryFilters().AnyAsync() && !await db.BaseUsers.IgnoreQueryFilters().AnyAsync())
             {
                 var hashedSeed = HashPassword(SeedPassword);
                 var now = DateTimeOffset.UtcNow;
-                db.Users.Add(new User { Id = Guid.Parse("e0000001-0001-0001-0001-000000000001"), FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, Role = UserRole.Admin, IsDeleted = false, CreatedAt = now });
-                db.Users.Add(new User { Id = Guid.Parse("e0000001-0001-0001-0001-000000000002"), FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, Role = UserRole.Viewer, IsDeleted = false, CreatedAt = now });
+                db.AdminUsers.Add(new AdminUser { Id = Guid.Parse("e0000001-0001-0001-0001-000000000001"), FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now });
+                db.WatcherUsers.Add(new WatcherUser { Id = Guid.Parse("e0000001-0001-0001-0001-000000000002"), FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now });
                 await db.SaveChangesAsync();
                 return;
             }
@@ -98,8 +98,8 @@ namespace Infra.Seeding
                     // Admin and Viewer users (same password as seed: Test123!)
                     var adminId = Guid.Parse("e0000001-0001-0001-0001-000000000001");
                     var viewerId = Guid.Parse("e0000001-0001-0001-0001-000000000002");
-                    db.Users.Add(new User { Id = adminId, FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, Role = UserRole.Admin, IsDeleted = false, CreatedAt = now });
-                    db.Users.Add(new User { Id = viewerId, FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, Role = UserRole.Viewer, IsDeleted = false, CreatedAt = now });
+                    db.AdminUsers.Add(new AdminUser { Id = adminId, FullName = "System Admin", Username = "admin", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now });
+                    db.WatcherUsers.Add(new WatcherUser { Id = viewerId, FullName = "Guest Viewer", Username = "viewer", HashedPassword = hashedSeed, IsDeleted = false, CreatedAt = now });
 
                     // Tournament-Teams many-to-many
                     foreach (var t in teamUsers)

@@ -20,22 +20,22 @@ namespace Business.Services.Teams
             var generatedPassword = GenerateRandomPassword(12);
             var hashedPassword = passwordHasher.HashPassword(generatedPassword);
 
-            var team = new Team
+            var team = new TeamUser
             {
                 Id = Guid.NewGuid(),
-                Name = request.Name,
+                FullName = request.Name,
                 Username = generatedUsername,
                 HashedPassword = hashedPassword,
                 CreatedAt = DateTimeOffset.UtcNow
             };
 
-            await unitOfWork.Repository<Team>().AddAsync(team);
+            await unitOfWork.Repository<TeamUser>().AddAsync(team);
             await unitOfWork.SaveChangesAsync();
 
             var result = new CreateTeamResponse
             {
                 Id = team.Id,
-                Name = team.Name,
+                Name = team.FullName,
                 Username = generatedUsername,
                 Password = generatedPassword,
                 Message = "Created Successfully"
@@ -46,24 +46,24 @@ namespace Business.Services.Teams
 
         public async Task<Result<UpdateTeamResponse>> UpdateTeam(UpdateTeamRequest request)
         {
-            var team = await unitOfWork.Repository<Team>().GetByIdAsync(request.Id);
+            var team = await unitOfWork.Repository<TeamUser>().GetByIdAsync(request.Id);
 
             if (team == null)
             {
                 return Result<UpdateTeamResponse>.FailureStatusCode("Team not found", ErrorType.NotFound);
             }
 
-            team.Name = request.Name;
+            team.FullName = request.Name;
             team.UpdatedAt = DateTimeOffset.UtcNow;
 
-            unitOfWork.Repository<Team>().Update(team);
+            unitOfWork.Repository<TeamUser>().Update(team);
             await unitOfWork.SaveChangesAsync();
 
             var response = new UpdateTeamResponse
             {
                 Message = "Updated Successfully",
                 Id = team.Id,
-                Name = team.Name
+                Name = team.FullName
             };
 
             return Result<UpdateTeamResponse>.Success(response);
@@ -71,7 +71,7 @@ namespace Business.Services.Teams
 
         public async Task<Result<DeleteTeamResponse>> DeleteTeam(Guid id)
         {
-            var team = await unitOfWork.Repository<Team>().GetByIdAsync(id);
+            var team = await unitOfWork.Repository<TeamUser>().GetByIdAsync(id);
 
             if (team == null)
             {
@@ -79,7 +79,7 @@ namespace Business.Services.Teams
             }
 
             team.UpdatedAt = DateTimeOffset.UtcNow;
-            unitOfWork.Repository<Team>().Remove(team);
+            unitOfWork.Repository<TeamUser>().Remove(team);
             await unitOfWork.SaveChangesAsync();
 
             var response = new DeleteTeamResponse
