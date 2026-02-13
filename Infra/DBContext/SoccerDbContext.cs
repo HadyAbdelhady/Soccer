@@ -73,6 +73,7 @@ namespace Infra.DBContext
                 .HasConversion<string>();
 
             modelBuilder.Entity<Match>()
+                .HasQueryFilter(x => !x.IsDeleted)
                 .Property(m => m.Status)
                 .HasConversion<string>();
 
