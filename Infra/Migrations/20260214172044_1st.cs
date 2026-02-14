@@ -6,11 +6,28 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infra.Migrations
 {
     /// <inheritdoc />
-    public partial class first : Migration
+    public partial class _1st : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "BaseUsers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    HashedPassword = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BaseUsers", x => x.Id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "Tournaments",
                 columns: table => new
@@ -30,6 +47,40 @@ namespace Infra.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Tournaments", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AdminUsers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AdminUsers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_AdminUsers_BaseUsers_Id",
+                        column: x => x.Id,
+                        principalTable: "BaseUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WatcherUsers",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WatcherUsers", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_WatcherUsers_BaseUsers_Id",
+                        column: x => x.Id,
+                        principalTable: "BaseUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -55,23 +106,23 @@ namespace Infra.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Teams",
+                name: "TeamUsers",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    HashedPassword = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Teams", x => x.Id);
+                    table.PrimaryKey("PK_TeamUsers", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Teams_Groups_GroupId",
+                        name: "FK_TeamUsers_BaseUsers_Id",
+                        column: x => x.Id,
+                        principalTable: "BaseUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_TeamUsers_Groups_GroupId",
                         column: x => x.GroupId,
                         principalTable: "Groups",
                         principalColumn: "Id");
@@ -107,15 +158,15 @@ namespace Infra.Migrations
                         principalTable: "Groups",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Matches_Teams_AwayTeamId",
+                        name: "FK_Matches_TeamUsers_AwayTeamId",
                         column: x => x.AwayTeamId,
-                        principalTable: "Teams",
+                        principalTable: "TeamUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Matches_Teams_HomeTeamId",
+                        name: "FK_Matches_TeamUsers_HomeTeamId",
                         column: x => x.HomeTeamId,
-                        principalTable: "Teams",
+                        principalTable: "TeamUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
@@ -145,9 +196,9 @@ namespace Infra.Migrations
                 {
                     table.PrimaryKey("PK_Players", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Players_Teams_TeamId",
+                        name: "FK_Players_TeamUsers_TeamId",
                         column: x => x.TeamId,
-                        principalTable: "Teams",
+                        principalTable: "TeamUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -163,9 +214,9 @@ namespace Infra.Migrations
                 {
                     table.PrimaryKey("PK_TeamTournament", x => new { x.TeamsId, x.TournamentsId });
                     table.ForeignKey(
-                        name: "FK_TeamTournament_Teams_TeamsId",
+                        name: "FK_TeamTournament_TeamUsers_TeamsId",
                         column: x => x.TeamsId,
-                        principalTable: "Teams",
+                        principalTable: "TeamUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
@@ -206,9 +257,9 @@ namespace Infra.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MatchCards_Teams_TeamId",
+                        name: "FK_MatchCards_TeamUsers_TeamId",
                         column: x => x.TeamId,
-                        principalTable: "Teams",
+                        principalTable: "TeamUsers",
                         principalColumn: "Id");
                 });
 
@@ -242,11 +293,53 @@ namespace Infra.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_MatchGoals_Teams_TeamId",
+                        name: "FK_MatchGoals_TeamUsers_TeamId",
                         column: x => x.TeamId,
-                        principalTable: "Teams",
+                        principalTable: "TeamUsers",
                         principalColumn: "Id");
                 });
+
+            migrationBuilder.CreateTable(
+                name: "MatchLineups",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MatchId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PlayerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ShirtNumber = table.Column<int>(type: "int", nullable: true),
+                    Position = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IsStarting = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
+                    UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MatchLineups", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MatchLineups_Matches_MatchId",
+                        column: x => x.MatchId,
+                        principalTable: "Matches",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_MatchLineups_Players_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "Players",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_MatchLineups_TeamUsers_TeamId",
+                        column: x => x.TeamId,
+                        principalTable: "TeamUsers",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BaseUsers_Username",
+                table: "BaseUsers",
+                column: "Username",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Groups_TournamentId",
@@ -304,30 +397,42 @@ namespace Infra.Migrations
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_MatchLineups_MatchId",
+                table: "MatchLineups",
+                column: "MatchId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MatchLineups_PlayerId",
+                table: "MatchLineups",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MatchLineups_TeamId",
+                table: "MatchLineups",
+                column: "TeamId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Players_TeamId",
                 table: "Players",
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Teams_GroupId",
-                table: "Teams",
-                column: "GroupId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Teams_Username",
-                table: "Teams",
-                column: "Username",
-                unique: true);
-
-            migrationBuilder.CreateIndex(
                 name: "IX_TeamTournament_TournamentsId",
                 table: "TeamTournament",
                 column: "TournamentsId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamUsers_GroupId",
+                table: "TeamUsers",
+                column: "GroupId");
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AdminUsers");
+
             migrationBuilder.DropTable(
                 name: "MatchCards");
 
@@ -335,7 +440,13 @@ namespace Infra.Migrations
                 name: "MatchGoals");
 
             migrationBuilder.DropTable(
+                name: "MatchLineups");
+
+            migrationBuilder.DropTable(
                 name: "TeamTournament");
+
+            migrationBuilder.DropTable(
+                name: "WatcherUsers");
 
             migrationBuilder.DropTable(
                 name: "Matches");
@@ -344,7 +455,10 @@ namespace Infra.Migrations
                 name: "Players");
 
             migrationBuilder.DropTable(
-                name: "Teams");
+                name: "TeamUsers");
+
+            migrationBuilder.DropTable(
+                name: "BaseUsers");
 
             migrationBuilder.DropTable(
                 name: "Groups");
