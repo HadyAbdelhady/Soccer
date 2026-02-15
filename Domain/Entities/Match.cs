@@ -35,6 +35,9 @@ namespace Data.Entities
         public string? Venue { get; set; }
         public StageType StageType { get; set; }
 
+        /// <summary>When the lineup-reminder push was sent (so we send only once per match).</summary>
+        public DateTimeOffset? LineupReminderSentAt { get; set; }
+
         public ICollection<MatchCard> Cards { get; set; } = [];
         public ICollection<MatchGoal> Goals { get; set; } = [];
         public ICollection<MatchLineup> Lineups { get; set; } = [];

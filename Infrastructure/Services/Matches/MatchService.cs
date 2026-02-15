@@ -79,6 +79,123 @@ namespace Business.Services.Matches
             });
         }
 
+
+        //public async Task<Result<SubmitResultResponse>> SubmitMatchResult(Guid matchId,SubmitResultRequest request)
+        //{
+        //    var match = await unitOfWork.Repository<Match>()
+        //        .GetAll()
+        //        .Include(m => m.Goals)
+        //        .Include(m => m.Cards)
+        //        .FirstOrDefaultAsync(m => m.Id == matchId);
+
+        //    if (match == null)
+        //    {
+        //        return Result<SubmitResultResponse>.FailureStatusCode(
+        //            "Match not found",
+        //            ErrorType.NotFound);
+        //    }
+
+
+        //    if (request.Cards != null && request.Cards.Any())
+        //    {
+        //        var cardPlayerIds = request.Cards
+        //            .Select(c => c.PlayerId)
+        //            .Distinct()
+        //            .ToList();
+
+        //        var existingPlayerIds = await unitOfWork.Repository<Player>()
+        //            .GetAll()
+        //            .Where(p => cardPlayerIds.Contains(p.Id))
+        //            .Select(p => p.Id)
+        //            .ToListAsync();
+
+        //        var missingPlayers = cardPlayerIds.Except(existingPlayerIds).ToList();
+
+        //        if (missingPlayers.Any())
+        //        {
+        //            return Result<SubmitResultResponse>.FailureStatusCode(
+        //                $"Invalid PlayerId(s): {string.Join(", ", missingPlayers)}",
+        //                ErrorType.Validation);
+        //        }
+
+        //        var validTeamPlayerIds = await unitOfWork.Repository<Player>()
+        //            .GetAll()
+        //            .Where(p =>
+        //                cardPlayerIds.Contains(p.Id) &&
+        //                (p.TeamId == match.HomeTeamId || p.TeamId == match.AwayTeamId))
+        //            .Select(p => p.Id)
+        //            .ToListAsync();
+
+        //        var invalidTeamPlayers = cardPlayerIds.Except(validTeamPlayerIds).ToList();
+
+        //        if (invalidTeamPlayers.Any())
+        //        {
+        //            return Result<SubmitResultResponse>.FailureStatusCode(
+        //                $"Player(s) not in match teams: {string.Join(", ", invalidTeamPlayers)}",
+        //                ErrorType.Validation);
+        //        }
+        //    }
+
+        //    match.Status = MatchStatus.FINISHED;
+        //    match.FinalWhistleTime = DateTime.UtcNow;
+        //    match.UpdatedAt = DateTimeOffset.UtcNow;
+
+        //    foreach (var goal in match.Goals.ToList())
+        //        unitOfWork.Repository<MatchGoal>().Remove(goal);
+
+        //    foreach (var card in match.Cards.ToList())
+        //        unitOfWork.Repository<MatchCard>().Remove(card);
+
+        //    if (request.Goals != null)
+        //    {
+        //        foreach (var gReq in request.Goals)
+        //        {
+        //            var goal = new MatchGoal
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                MatchId = matchId,
+        //                ScorerId = gReq.ScorerId,
+        //                TeamId = gReq.TeamId,
+        //                Minute = gReq.Minute,
+        //                GoalType = gReq.GoalType,
+        //                CreatedAt = DateTimeOffset.UtcNow
+        //            };
+
+        //            await unitOfWork.Repository<MatchGoal>().AddAsync(goal);
+        //        }
+        //    }
+
+        //    if (request.Cards != null)
+        //    {
+        //        foreach (var cReq in request.Cards)
+        //        {
+        //            var card = new MatchCard
+        //            {
+        //                Id = Guid.NewGuid(),
+        //                MatchId = matchId,
+        //                PlayerId = cReq.PlayerId,
+        //                TeamId = cReq.TeamId,
+        //                Minute = cReq.Minute,
+        //                CardType = cReq.CardType,
+        //                CreatedAt = DateTimeOffset.UtcNow
+        //            };
+
+        //            await unitOfWork.Repository<MatchCard>().AddAsync(card);
+        //        }
+        //    }
+
+        //    unitOfWork.Repository<Match>().Update(match);
+        //    await unitOfWork.SaveChangesAsync();
+
+
+        //    await tournamentService.ResolvePlaceholders(match.TournamentId);
+
+        //    return Result<SubmitResultResponse>.Success(new SubmitResultResponse
+        //    {
+        //        MatchId = matchId
+        //    });
+        //}
+
         public async Task<Result<SubmitResultResponse>> SubmitMatchResult(Guid matchId, SubmitResultRequest request)
         {
             var match = await unitOfWork.Repository<Match>()
@@ -304,6 +421,60 @@ namespace Business.Services.Matches
             };
 
             return Result<GetMatchLineupResponse>.Success(response);
+        }
+
+        public async Task<Result<GetAllMatchesResponse>> GetAllMatches(DateTime? date = null, Guid? teamId = null)
+        {
+            IQueryable<Match> query = unitOfWork.Repository<Match>()
+                .GetAll()
+                .Include(m => m.Tournament)
+                .Include(m => m.HomeTeam)
+                .Include(m => m.AwayTeam);
+
+            if (date.HasValue)
+            {
+                var dayStart = date.Value.Date;
+                var dayEnd = dayStart.AddDays(1);
+                query = query.Where(m => m.KickoffTime >= dayStart && m.KickoffTime < dayEnd);
+            }
+
+            if (teamId.HasValue)
+            {
+                var id = teamId.Value;
+                query = query.Where(m => m.HomeTeamId == id || m.AwayTeamId == id);
+            }
+
+            var matches = await query
+                .OrderBy(m => m.TournamentId)
+                .ThenBy(m => m.KickoffTime)
+                .ToListAsync();
+
+            var tournaments = matches
+                .GroupBy(m => new { m.TournamentId, TournamentName = m.Tournament?.Name ?? "" })
+                .Select(g => new TournamentWithMatchesDto
+                {
+                    TournamentId = g.Key.TournamentId,
+                    TournamentName = g.Key.TournamentName,
+                    Matches = g.Select(m => new MatchResponse
+                    {
+                        Id = m.Id,
+                        TournamentId = m.TournamentId,
+                        GroupId = m.GroupId,
+                        HomeTeamId = m.HomeTeamId,
+                        HomeTeamName = m.HomeTeam != null ? m.HomeTeam.FullName : m.HomeTeamPlaceholder,
+                        AwayTeamId = m.AwayTeamId,
+                        AwayTeamName = m.AwayTeam != null ? m.AwayTeam.FullName : m.AwayTeamPlaceholder,
+                        HomeTeamPlaceholder = m.HomeTeamPlaceholder,
+                        AwayTeamPlaceholder = m.AwayTeamPlaceholder,
+                        KickoffTime = m.KickoffTime,
+                        Venue = m.Venue,
+                        StageType = m.StageType,
+                        Status = m.Status
+                    }).ToList()
+                })
+                .ToList();
+
+            return Result<GetAllMatchesResponse>.Success(new GetAllMatchesResponse { Tournaments = tournaments });
         }
     }
 }

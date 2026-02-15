@@ -201,6 +201,82 @@ namespace Business.Services.Standings
             return Result<List<TopScorerDto>>.Success(result.ToList());
         }
 
+        public async Task<Result<TournamentStatsDto>> GetTournamentStatsAsync(Guid tournamentId)
+        {
+            var tournament = await _unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Matches).ThenInclude(m => m.Goals)
+                .Include(t => t.Matches).ThenInclude(m => m.Cards)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
+
+            if (tournament == null)
+                return Result<TournamentStatsDto>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+
+            var totalGoals = tournament.Matches.Sum(m => m.Goals.Count);
+            var redCards = tournament.Matches.Sum(m => m.Cards.Count(c => c.CardType == CardType.RED || c.CardType == CardType.SECONDYELLOW));
+            var yellowCards = tournament.Matches.Sum(m => m.Cards.Count(c => c.CardType == CardType.YELLOW));
+
+            return Result<TournamentStatsDto>.Success(new TournamentStatsDto
+            {
+                TournamentId = tournament.Id,
+                TournamentName = tournament.Name,
+                TotalGoals = totalGoals,
+                TotalAssists = 0,
+                RedCards = redCards,
+                YellowCards = yellowCards,
+                MatchesCount = tournament.Matches.Count
+            });
+        }
+
+        public async Task<Result<List<TournamentPlayerStatsDto>>> GetTournamentPlayerStatsAsync(Guid tournamentId)
+        {
+            var tournament = await _unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Matches).ThenInclude(m => m.Goals)
+                .Include(t => t.Matches).ThenInclude(m => m.Cards)
+                .Include(t => t.Matches).ThenInclude(m => m.Lineups)
+                .FirstOrDefaultAsync(t => t.Id == tournamentId);
+
+            if (tournament == null)
+                return Result<List<TournamentPlayerStatsDto>>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+
+            var playerIds = tournament.Matches
+                .SelectMany(m => m.Lineups)
+                .Select(l => l.PlayerId)
+                .Distinct()
+                .ToList();
+
+            if (playerIds.Count == 0)
+                return Result<List<TournamentPlayerStatsDto>>.Success([]);
+
+            var players = await _unitOfWork.Repository<Player>()
+                .GetAll()
+                .Include(p => p.Team)
+                .Where(p => playerIds.Contains(p.Id))
+                .ToListAsync();
+
+            var allGoals = tournament.Matches.SelectMany(m => m.Goals).ToList();
+            var allCards = tournament.Matches.SelectMany(m => m.Cards).ToList();
+            var allLineups = tournament.Matches.SelectMany(m => m.Lineups).ToList();
+
+            var list = players.Select(p => new TournamentPlayerStatsDto
+            {
+                PlayerId = p.Id,
+                PlayerName = p.FullName,
+                TeamName = p.Team?.FullName,
+                Goals = allGoals.Count(g => g.ScorerId == p.Id && g.GoalType != GoalType.OWNGOAL),
+                Assists = 0,
+                RedCards = allCards.Count(c => c.PlayerId == p.Id && (c.CardType == CardType.RED || c.CardType == CardType.SECONDYELLOW)),
+                YellowCards = allCards.Count(c => c.PlayerId == p.Id && c.CardType == CardType.YELLOW),
+                MatchesPlayed = allLineups.Count(l => l.PlayerId == p.Id)
+            })
+            .OrderByDescending(x => x.Goals)
+            .ThenBy(x => x.PlayerName)
+            .ToList();
+
+            return Result<List<TournamentPlayerStatsDto>>.Success(list);
+        }
+
         private static (int home, int away) CalculateScore(Match match)
         {
             int home =

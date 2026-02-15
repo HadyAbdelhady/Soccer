@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infra.Migrations
 {
     [DbContext(typeof(SoccerDbContext))]
-    [Migration("20260214172044_1st")]
-    partial class _1st
+    [Migration("20260214231208_1th")]
+    partial class _1th
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,6 +33,10 @@ namespace Infra.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("FcmToken")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -127,6 +131,9 @@ namespace Infra.Migrations
 
                     b.Property<DateTime?>("KickoffTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTimeOffset?>("LineupReminderSentAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("int");

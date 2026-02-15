@@ -17,6 +17,8 @@ namespace Business.DTOs.Matches
     {
         public Guid Id { get; set; }
         public Guid TournamentId { get; set; }
+        /// <summary>Tournament name (included when returning all matches).</summary>
+        public string? TournamentName { get; set; }
         public Guid? GroupId { get; set; }
         public Guid? HomeTeamId { get; set; }
         public string? HomeTeamName { get; set; }
@@ -29,6 +31,19 @@ namespace Business.DTOs.Matches
         public StageType StageType { get; set; }
         public MatchStatus Status { get; set; }
         public string Message { get; set; } = string.Empty;
+    }
+
+    /// <summary>Tournament with its matches (for get-all-matches response).</summary>
+    public class TournamentWithMatchesDto
+    {
+        public Guid TournamentId { get; set; }
+        public string TournamentName { get; set; } = string.Empty;
+        public List<MatchResponse> Matches { get; set; } = [];
+    }
+
+    public class GetAllMatchesResponse
+    {
+        public List<TournamentWithMatchesDto> Tournaments { get; set; } = [];
     }
 
     public class UpdateMatchScheduleRequest

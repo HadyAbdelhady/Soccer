@@ -91,5 +91,21 @@ namespace Soccer.Controllers
         {
             return await _standingsService.GetTournamentTopScorersAsync(id, topN);
         }
+
+        /// <summary>Get overall tournament statistics (goals, assists, red/yellow cards, match count).</summary>
+        [HttpGet("{id}/stats")]
+        [TranslateResultToActionResult]
+        public async Task<Result<TournamentStatsDto>> GetTournamentStats(Guid id)
+        {
+            return await _standingsService.GetTournamentStatsAsync(id);
+        }
+
+        /// <summary>Get per-player statistics for the tournament (goals, assists, cards, matches played).</summary>
+        [HttpGet("{id}/player-stats")]
+        [TranslateResultToActionResult]
+        public async Task<Result<List<TournamentPlayerStatsDto>>> GetTournamentPlayerStats(Guid id)
+        {
+            return await _standingsService.GetTournamentPlayerStatsAsync(id);
+        }
     }
 }

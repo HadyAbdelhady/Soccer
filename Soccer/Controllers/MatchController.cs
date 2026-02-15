@@ -59,5 +59,13 @@ namespace Soccer.Controllers
             var result = await matchService.GetMatchLineupForTeam(id, teamId);
             return result;
         }
+
+        /// <summary>Get all matches across all tournaments. Optionally filter by date and/or team (matches where team is home or away).</summary>
+        [HttpGet("getAllMatches")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetAllMatchesResponse>> GetAllMatches([FromQuery] DateTime? date = null, [FromQuery] Guid? teamId = null)
+        {
+            return await matchService.GetAllMatches(date, teamId);
+        }
     }
 }

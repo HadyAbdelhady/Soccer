@@ -31,6 +31,10 @@ namespace Infra.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
 
+                    b.Property<string>("FcmToken")
+                        .HasMaxLength(512)
+                        .HasColumnType("nvarchar(512)");
+
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -124,6 +128,9 @@ namespace Infra.Migrations
 
                     b.Property<DateTime?>("KickoffTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTimeOffset?>("LineupReminderSentAt")
+                        .HasColumnType("datetimeoffset");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("int");

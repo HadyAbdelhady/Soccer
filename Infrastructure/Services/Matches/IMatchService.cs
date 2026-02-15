@@ -11,5 +11,6 @@ namespace Business.Services.Matches
         Task<Result<SetMatchLineupResponse>> SetMatchLineup(Guid matchId, SetMatchLineupRequest request);
         Task<Result<GetMatchLineupResponse>> GetMatchLineup(Guid matchId);
         Task<Result<GetMatchLineupResponse>> GetMatchLineupForTeam(Guid matchId, Guid teamId);
+        Task<Result<GetAllMatchesResponse>> GetAllMatches(DateTime? date = null, Guid? teamId = null);
     }
 }

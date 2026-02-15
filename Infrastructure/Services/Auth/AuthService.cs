@@ -87,6 +87,86 @@ namespace Business.Services.Auth
             return Result<LoginResponse>.FailureStatusCode("Invalid username or password", ErrorType.UnAuthorized);
         }
 
+        public async Task<Result<LoginResponse>> RegisterWatcherAsync(RegisterWatcherRequest request)
+        {
+            var usernameTaken = await unitOfWork.Repository<BaseUser>()
+                .AnyAsync(u => u.Username == request.Username.Trim());
+            if (usernameTaken)
+                return Result<LoginResponse>.FailureStatusCode("Username is already taken.", ErrorType.BadRequest);
+
+            var watcher = new WatcherUser
+            {
+                Id = Guid.NewGuid(),
+                FullName = request.FullName.Trim(),
+                Username = request.Username.Trim(),
+                HashedPassword = passwordHasher.HashPassword(request.Password),
+                IsDeleted = false,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+
+            await unitOfWork.Repository<WatcherUser>().AddAsync(watcher);
+            await unitOfWork.SaveChangesAsync();
+
+            var token = jwtTokenService.GenerateToken(watcher.Id, watcher.Username, UserRole.Viewer, watcher.FullName);
+            var refreshToken = jwtTokenService.GenerateRefreshToken();
+
+            return Result<LoginResponse>.Success(new LoginResponse
+            {
+                Id = watcher.Id,
+                Name = watcher.FullName,
+                Username = watcher.Username,
+                Role = UserRole.Viewer,
+                AccessToken = token,
+                RefreshToken = refreshToken,
+                Message = "Registered successfully"
+            });
+        }
+
+        public async Task<Result<SetFcmTokenResponse>> SetFcmTokenAsync(Guid userId, UserRole role, string? fcmToken)
+        {
+            if (role == UserRole.Admin)
+            {
+                var admin = await unitOfWork.Repository<AdminUser>().GetByIdAsync(userId);
+                if (admin == null)
+                    return Result<SetFcmTokenResponse>.FailureStatusCode("User not found", ErrorType.NotFound);
+                admin.FcmToken = fcmToken;
+                admin.UpdatedAt = DateTimeOffset.UtcNow;
+                unitOfWork.Repository<AdminUser>().Update(admin);
+            }
+            else if (role == UserRole.Viewer)
+            {
+                var watcher = await unitOfWork.Repository<WatcherUser>().GetByIdAsync(userId);
+                if (watcher == null)
+                    return Result<SetFcmTokenResponse>.FailureStatusCode("User not found", ErrorType.NotFound);
+                watcher.FcmToken = fcmToken;
+                watcher.UpdatedAt = DateTimeOffset.UtcNow;
+                unitOfWork.Repository<WatcherUser>().Update(watcher);
+            }
+            else if (role == UserRole.Team)
+            {
+                var team = await unitOfWork.Repository<TeamUser>().GetByIdAsync(userId);
+                if (team == null)
+                    return Result<SetFcmTokenResponse>.FailureStatusCode("User not found", ErrorType.NotFound);
+                team.FcmToken = fcmToken;
+                team.UpdatedAt = DateTimeOffset.UtcNow;
+                unitOfWork.Repository<TeamUser>().Update(team);
+            }
+            else
+            {
+                return Result<SetFcmTokenResponse>.FailureStatusCode("Unknown role", ErrorType.BadRequest);
+            }
+
+            await unitOfWork.SaveChangesAsync();
+            return Result<SetFcmTokenResponse>.Success(new SetFcmTokenResponse());
+        }
+
+        public async Task<Result<LogoutResponse>> LogoutAsync(Guid userId, UserRole role)
+        {
+            // Clear FCM token so the user stops receiving push notifications until they log in again.
+            await SetFcmTokenAsync(userId, role, null);
+            return Result<LogoutResponse>.Success(new LogoutResponse());
+        }
+
         /// <summary>
         /// Validates password: BCrypt hash or legacy plain-text (for backward compatibility).
         /// </summary>

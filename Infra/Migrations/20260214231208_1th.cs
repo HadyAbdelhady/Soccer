@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infra.Migrations
 {
     /// <inheritdoc />
-    public partial class _1st : Migration
+    public partial class _1th : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -19,6 +19,7 @@ namespace Infra.Migrations
                     FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     HashedPassword = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    FcmToken = table.Column<string>(type: "nvarchar(512)", maxLength: 512, nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
@@ -145,6 +146,7 @@ namespace Infra.Migrations
                     Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Venue = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     StageType = table.Column<int>(type: "int", nullable: false),
+                    LineupReminderSentAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)

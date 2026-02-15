@@ -7,12 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Domain\Data.csproj" />
-    <ProjectReference Include="..\Infra\Infra.csproj" />
+    <Compile Remove="Services\Tournaments\HelperFunctions\**" />
+    <EmbeddedResource Remove="Services\Tournaments\HelperFunctions\**" />
+    <None Remove="Services\Tournaments\HelperFunctions\**" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\Tournaments\HelperFunctions\" />
+    <ProjectReference Include="..\Domain\Data.csproj" />
+    <ProjectReference Include="..\Infra\Infra.csproj" />
   </ItemGroup>
 
 </Project>

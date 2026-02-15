@@ -10,6 +10,8 @@ using Business.Services.Standings;
 using Business.Services.Matches;
 using Infra;
 using Infra.DBContext;
+using Soccer.Services;
+using Soccer.Services.Fcm;
 using Infra.Interceptors;
 using Infra.Interface;
 using Infra.Persistent;
@@ -79,6 +81,10 @@ namespace Soccer
             builder.Services.AddScoped<IPlayerService, PlayerService>();
             builder.Services.AddScoped<IStandingsService, StandingsService>();
             builder.Services.AddScoped<IMatchService, MatchService>();
+
+            // FCM push notifications (lineup reminder)
+            builder.Services.AddSingleton<IFcmService, FcmService>();
+            builder.Services.AddHostedService<LineupReminderBackgroundService>();
 
             // Auth: JWT + password hashing + auth service
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
@@ -153,7 +159,7 @@ namespace Soccer
                 try
                 {
                     await db.Database.MigrateAsync();
-                    await DataSeeder.SeedIfEmptyAsync(db);
+                    //await DataSeeder.SeedIfEmptyAsync(db);
                 }
                 catch (Exception ex)
                 {

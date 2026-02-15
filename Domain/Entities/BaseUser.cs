@@ -23,6 +23,10 @@ namespace Data.Entities
         [Required, MaxLength(255)]
         public string HashedPassword { get; set; } = string.Empty;
 
+        /// <summary>FCM device token for push notifications.</summary>
+        [MaxLength(512)]
+        public string? FcmToken { get; set; }
+
         public bool IsDeleted { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset? UpdatedAt { get; set; }

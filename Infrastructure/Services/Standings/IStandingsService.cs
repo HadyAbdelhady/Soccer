@@ -8,5 +8,7 @@ namespace Business.Services.Standings
     {
         Task<Result<GroupStandingsResponse>> GetGroupStandingsAsync(Guid groupId);
         Task<Result<List<TopScorerDto>>> GetTournamentTopScorersAsync(Guid tournamentId, int? topN);
+        Task<Result<TournamentStatsDto>> GetTournamentStatsAsync(Guid tournamentId);
+        Task<Result<List<TournamentPlayerStatsDto>>> GetTournamentPlayerStatsAsync(Guid tournamentId);
     }
 }
