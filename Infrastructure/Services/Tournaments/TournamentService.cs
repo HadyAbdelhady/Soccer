@@ -801,5 +801,24 @@ namespace Business.Services.Tournaments
 
             return Result<DeleteTournamentResponse>.Success(response);
         }
+
+        public async Task<Result<GetAllTournamentsResponse>> GetAllTournaments()
+        {
+            var tournaments = await unitOfWork.Repository<Tournament>().GetAll().ToListAsync();
+            
+            var tournamentDtos = tournaments.Select(t => new GetTournamentDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Type = t.Type,
+                StartDate = t.StartDateTime,
+                EndDate = t.EndDateTime
+            }).ToList();
+
+            return Result<GetAllTournamentsResponse>.Success(new GetAllTournamentsResponse
+            {
+                Tournaments = tournamentDtos
+            });
+        }
     }
 }

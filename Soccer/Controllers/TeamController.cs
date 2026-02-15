@@ -35,5 +35,12 @@ namespace Soccer.Controllers
             var result = await teamService.DeleteTeam(id);
             return result;
         }
+
+        [HttpGet]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetAllTeamsResponse>> GetAllTeams()
+        {
+            return await teamService.GetAllTeams();
+        }
     }
 }

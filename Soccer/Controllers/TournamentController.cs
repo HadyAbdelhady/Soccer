@@ -107,5 +107,12 @@ namespace Soccer.Controllers
         {
             return await _standingsService.GetTournamentPlayerStatsAsync(id);
         }
+
+        [HttpGet]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetAllTournamentsResponse>> GetAllTournaments()
+        {
+            return await tournamentService.GetAllTournaments();
+        }
     }
 }

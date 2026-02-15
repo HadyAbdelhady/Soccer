@@ -159,7 +159,7 @@ namespace Soccer
                 var db = scope.ServiceProvider.GetRequiredService<SoccerDbContext>();
                 try
                 {
-                    await db.Database.MigrateAsync();
+                    //await db.Database.MigrateAsync();
                     //await DataSeeder.SeedIfEmptyAsync(db);
                 }
                 catch (Exception ex)

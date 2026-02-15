@@ -3,6 +3,7 @@ using Infra.ResultWrapper;
 using Infra.Interface;
 using Infra.enums;
 using Data.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace Business.Services.Teams
 {
@@ -90,6 +91,23 @@ namespace Business.Services.Teams
             };
 
             return Result<DeleteTeamResponse>.Success(response);
+        }
+
+        public async Task<Result<GetAllTeamsResponse>> GetAllTeams()
+        {
+            var teams = await unitOfWork.Repository<TeamUser>().GetAll().ToListAsync();
+            
+            var teamDtos = teams.Select(t => new GetTeamDto
+            {
+                Id = t.Id,
+                Name = t.FullName,
+                Username = t.Username
+            }).ToList();
+
+            return Result<GetAllTeamsResponse>.Success(new GetAllTeamsResponse
+            {
+                Teams = teamDtos
+            });
         }
 
         private static string GenerateRandomPassword(int length)
