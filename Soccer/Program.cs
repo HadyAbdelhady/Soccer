@@ -85,6 +85,7 @@ namespace Soccer
             // FCM push notifications (lineup reminder)
             builder.Services.AddSingleton<IFcmService, FcmService>();
             builder.Services.AddHostedService<LineupReminderBackgroundService>();
+            builder.Services.AddHostedService<MatchStatusBackgroundService>();
 
             // Auth: JWT + password hashing + auth service
             builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

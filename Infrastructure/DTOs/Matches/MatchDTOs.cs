@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Infra.enums;
 
 namespace Business.DTOs.Matches
@@ -72,6 +73,8 @@ namespace Business.DTOs.Matches
     {
         public Guid TeamId { get; set; }
         public Guid ScorerId { get; set; }
+        /// <summary>Optional. For REGULAR: same-team assister. For OWNGOAL: player from the other team who caused the own goal. Not used for PENALTY or FOUL.</summary>
+        public Guid? AssisterId { get; set; }
         public int Minute { get; set; }
         public GoalType GoalType { get; set; }
     }
@@ -80,6 +83,9 @@ namespace Business.DTOs.Matches
     {
         public Guid TeamId { get; set; }
         public Guid PlayerId { get; set; }
+        /// <summary>Alias for PlayerId. If client sends "scorerId" instead of "playerId", it is accepted.</summary>
+        [JsonPropertyName("scorerId")]
+        public Guid ScorerId { get; set; }
         public int Minute { get; set; }
         public CardType CardType { get; set; }
     }
@@ -88,6 +94,20 @@ namespace Business.DTOs.Matches
     {
         public Guid MatchId { get; set; }
         public string Message { get; set; } = "Created Successfully";
+    }
+
+    public class AddGoalResponse
+    {
+        public Guid MatchId { get; set; }
+        public Guid GoalId { get; set; }
+        public string Message { get; set; } = "Goal added.";
+    }
+
+    public class AddCardResponse
+    {
+        public Guid MatchId { get; set; }
+        public Guid CardId { get; set; }
+        public string Message { get; set; } = "Card added.";
     }
 
     public class LineupPlayerDto

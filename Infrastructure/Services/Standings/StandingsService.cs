@@ -213,6 +213,7 @@ namespace Business.Services.Standings
                 return Result<TournamentStatsDto>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
 
             var totalGoals = tournament.Matches.Sum(m => m.Goals.Count);
+            var totalAssists = tournament.Matches.Sum(m => m.Goals.Count(g => g.AssisterId != null));
             var redCards = tournament.Matches.Sum(m => m.Cards.Count(c => c.CardType == CardType.RED || c.CardType == CardType.SECONDYELLOW));
             var yellowCards = tournament.Matches.Sum(m => m.Cards.Count(c => c.CardType == CardType.YELLOW));
 
@@ -221,7 +222,7 @@ namespace Business.Services.Standings
                 TournamentId = tournament.Id,
                 TournamentName = tournament.Name,
                 TotalGoals = totalGoals,
-                TotalAssists = 0,
+                TotalAssists = totalAssists,
                 RedCards = redCards,
                 YellowCards = yellowCards,
                 MatchesCount = tournament.Matches.Count
@@ -265,7 +266,7 @@ namespace Business.Services.Standings
                 PlayerName = p.FullName,
                 TeamName = p.Team?.FullName,
                 Goals = allGoals.Count(g => g.ScorerId == p.Id && g.GoalType != GoalType.OWNGOAL),
-                Assists = 0,
+                Assists = allGoals.Count(g => g.AssisterId == p.Id),
                 RedCards = allCards.Count(c => c.PlayerId == p.Id && (c.CardType == CardType.RED || c.CardType == CardType.SECONDYELLOW)),
                 YellowCards = allCards.Count(c => c.PlayerId == p.Id && c.CardType == CardType.YELLOW),
                 MatchesPlayed = allLineups.Count(l => l.PlayerId == p.Id)

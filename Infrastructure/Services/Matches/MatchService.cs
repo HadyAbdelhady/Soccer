@@ -97,43 +97,127 @@ namespace Business.Services.Matches
             match.FinalWhistleTime = DateTime.UtcNow;
             match.UpdatedAt = DateTimeOffset.UtcNow;
 
-            // Clear existing if editable
-            foreach (var goal in match.Goals.ToList()) unitOfWork.Repository<MatchGoal>().Remove(goal);
-            foreach (var card in match.Cards.ToList()) unitOfWork.Repository<MatchCard>().Remove(card);
+            var updatingGoals = request.Goals != null && request.Goals.Count > 0;
+            var updatingCards = request.Cards != null && request.Cards.Count > 0;
 
-            // Add Goals
-            foreach (var gReq in request.Goals)
+            // Validate player IDs only for the parts we are updating
+            var goalScorerIds = updatingGoals ? request.Goals!.Select(g => g.ScorerId).Distinct().ToList() : new List<Guid>();
+            var goalAssisterIds = updatingGoals ? request.Goals!.Where(g => g.AssisterId.HasValue && g.AssisterId.Value != Guid.Empty).Select(g => g.AssisterId!.Value).Distinct().ToList() : new List<Guid>();
+            var cardPlayerIds = updatingCards ? request.Cards!.Select(c => c.PlayerId != Guid.Empty ? c.PlayerId : c.ScorerId).Distinct().ToList() : new List<Guid>();
+            var allPlayerIds = goalScorerIds.Union(goalAssisterIds).Union(cardPlayerIds).Distinct().ToList();
+
+            if (allPlayerIds.Any())
             {
-                var goal = new MatchGoal
+                var playersByTeam = await unitOfWork.Repository<Player>()
+                    .GetAll()
+                    .Where(p => allPlayerIds.Contains(p.Id))
+                    .Select(p => new { p.Id, p.TeamId })
+                    .ToListAsync();
+                var playerToTeam = playersByTeam.ToDictionary(x => x.Id, x => x.TeamId);
+                var missingIds = allPlayerIds.Except(playerToTeam.Keys).ToList();
+                if (missingIds.Any())
                 {
-                    Id = Guid.NewGuid(),
-                    MatchId = matchId,
-                    ScorerId = gReq.ScorerId,
-                    TeamId = gReq.TeamId,
-                    Minute = gReq.Minute,
-                    GoalType = gReq.GoalType,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-                await unitOfWork.Repository<MatchGoal>().AddAsync(goal);
+                    return Result<SubmitResultResponse>.FailureStatusCode(
+                        "One or more player IDs do not exist in the database. Invalid IDs: " + string.Join(", ", missingIds),
+                        ErrorType.BadRequest);
+                }
+                if (updatingGoals)
+                {
+                    foreach (var gReq in request.Goals!)
+                    {
+                        if (playerToTeam.TryGetValue(gReq.ScorerId, out var scorerTeamId) && scorerTeamId != gReq.TeamId)
+                        {
+                            return Result<SubmitResultResponse>.FailureStatusCode(
+                                "Goal scorer must belong to the goal's team. ScorerId: " + gReq.ScorerId,
+                                ErrorType.BadRequest);
+                        }
+                        if (gReq.AssisterId.HasValue && gReq.AssisterId.Value != Guid.Empty)
+                        {
+                            if (gReq.GoalType == GoalType.PENALITY || gReq.GoalType == GoalType.FOUL)
+                            {
+                                return Result<SubmitResultResponse>.FailureStatusCode(
+                                    "Assister is not allowed for goal type " + gReq.GoalType + ". Only REGULAR and OWNGOAL can have an assister.",
+                                    ErrorType.BadRequest);
+                            }
+                            if (!playerToTeam.TryGetValue(gReq.AssisterId.Value, out var assisterTeamId))
+                            {
+                                return Result<SubmitResultResponse>.FailureStatusCode(
+                                    "Assister player does not exist. AssisterId: " + gReq.AssisterId,
+                                    ErrorType.BadRequest);
+                            }
+                            if (gReq.GoalType == GoalType.REGULAR && assisterTeamId != gReq.TeamId)
+                            {
+                                return Result<SubmitResultResponse>.FailureStatusCode(
+                                    "For REGULAR goals the assister must belong to the same team as the scorer. AssisterId: " + gReq.AssisterId,
+                                    ErrorType.BadRequest);
+                            }
+                            if (gReq.GoalType == GoalType.OWNGOAL && assisterTeamId == gReq.TeamId)
+                            {
+                                return Result<SubmitResultResponse>.FailureStatusCode(
+                                    "For OWNGOAL the assister must be a player from the other team (who caused the own goal). AssisterId: " + gReq.AssisterId,
+                                    ErrorType.BadRequest);
+                            }
+                        }
+                    }
+                }
+                if (updatingCards)
+                {
+                    foreach (var cReq in request.Cards!)
+                    {
+                        var cardPlayerId = cReq.PlayerId != Guid.Empty ? cReq.PlayerId : cReq.ScorerId;
+                        if (playerToTeam.TryGetValue(cardPlayerId, out var playerTeamId) && playerTeamId != cReq.TeamId)
+                        {
+                            return Result<SubmitResultResponse>.FailureStatusCode(
+                                "Card recipient must belong to the card's team. PlayerId: " + cardPlayerId,
+                                ErrorType.BadRequest);
+                        }
+                    }
+                }
             }
 
-            // Add Cards
-            foreach (var cReq in request.Cards)
+            // Only clear and replace goals when the request includes goals
+            if (updatingGoals)
             {
-                var card = new MatchCard
+                foreach (var goal in match.Goals.ToList())
+                    unitOfWork.Repository<MatchGoal>().Remove(goal);
+                foreach (var gReq in request.Goals!)
                 {
-                    Id = Guid.NewGuid(),
-                    MatchId = matchId,
-                    PlayerId = cReq.PlayerId,
-                    TeamId = cReq.TeamId,
-                    Minute = cReq.Minute,
-                    CardType = cReq.CardType,
-                    CreatedAt = DateTimeOffset.UtcNow
-                };
-                // Logic: Second yellow automatically results in a red card can be handled in UI or here
-                // If we detect two yellows for same player, we could add a red. 
-                // But usually the client sends exactly what happened.
-                await unitOfWork.Repository<MatchCard>().AddAsync(card);
+                    Guid? assisterId = (gReq.GoalType == GoalType.REGULAR || gReq.GoalType == GoalType.OWNGOAL) && gReq.AssisterId.HasValue && gReq.AssisterId.Value != Guid.Empty ? gReq.AssisterId : null;
+                    var goal = new MatchGoal
+                    {
+                        Id = Guid.NewGuid(),
+                        MatchId = matchId,
+                        ScorerId = gReq.ScorerId,
+                        AssisterId = assisterId,
+                        TeamId = gReq.TeamId,
+                        Minute = gReq.Minute,
+                        GoalType = gReq.GoalType,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    };
+                    await unitOfWork.Repository<MatchGoal>().AddAsync(goal);
+                }
+            }
+
+            // Only clear and replace cards when the request includes cards
+            if (updatingCards)
+            {
+                foreach (var card in match.Cards.ToList())
+                    unitOfWork.Repository<MatchCard>().Remove(card);
+                foreach (var cReq in request.Cards!)
+                {
+                    var cardPlayerId = cReq.PlayerId != Guid.Empty ? cReq.PlayerId : cReq.ScorerId;
+                    var card = new MatchCard
+                    {
+                        Id = Guid.NewGuid(),
+                        MatchId = matchId,
+                        PlayerId = cardPlayerId,
+                        TeamId = cReq.TeamId,
+                        Minute = cReq.Minute,
+                        CardType = cReq.CardType,
+                        CreatedAt = DateTimeOffset.UtcNow
+                    };
+                    await unitOfWork.Repository<MatchCard>().AddAsync(card);
+                }
             }
 
             unitOfWork.Repository<Match>().Update(match);
@@ -146,6 +230,95 @@ namespace Business.Services.Matches
             {
                 MatchId = matchId
             });
+        }
+
+        public async Task<Result<AddGoalResponse>> AddGoal(Guid matchId, GoalRequest request)
+        {
+            var match = await unitOfWork.Repository<Match>().GetByIdAsync(matchId);
+            if (match == null)
+                return Result<AddGoalResponse>.FailureStatusCode("Match not found", ErrorType.NotFound);
+
+            var playerIds = new List<Guid> { request.ScorerId };
+            if (request.AssisterId.HasValue && request.AssisterId.Value != Guid.Empty)
+                playerIds.Add(request.AssisterId.Value);
+            var playersByTeam = await unitOfWork.Repository<Player>()
+                .GetAll()
+                .Where(p => playerIds.Contains(p.Id))
+                .Select(p => new { p.Id, p.TeamId })
+                .ToListAsync();
+            var playerToTeam = playersByTeam.ToDictionary(x => x.Id, x => x.TeamId);
+            if (!playerToTeam.TryGetValue(request.ScorerId, out var scorerTeamId) || scorerTeamId != request.TeamId)
+                return Result<AddGoalResponse>.FailureStatusCode("Goal scorer must exist and belong to the goal's team.", ErrorType.BadRequest);
+            if (request.AssisterId.HasValue && request.AssisterId.Value != Guid.Empty)
+            {
+                if (request.GoalType == GoalType.PENALITY || request.GoalType == GoalType.FOUL)
+                    return Result<AddGoalResponse>.FailureStatusCode("Assister is not allowed for " + request.GoalType + ". Only REGULAR and OWNGOAL can have an assister.", ErrorType.BadRequest);
+                if (!playerToTeam.TryGetValue(request.AssisterId.Value, out var assisterTeamId))
+                    return Result<AddGoalResponse>.FailureStatusCode("Assister player does not exist.", ErrorType.BadRequest);
+                if (request.GoalType == GoalType.REGULAR && assisterTeamId != request.TeamId)
+                    return Result<AddGoalResponse>.FailureStatusCode("For REGULAR goals the assister must belong to the same team as the scorer.", ErrorType.BadRequest);
+                if (request.GoalType == GoalType.OWNGOAL && assisterTeamId == request.TeamId)
+                    return Result<AddGoalResponse>.FailureStatusCode("For OWNGOAL the assister must be a player from the other team.", ErrorType.BadRequest);
+            }
+
+            Guid? assisterId = (request.GoalType == GoalType.REGULAR || request.GoalType == GoalType.OWNGOAL) && request.AssisterId.HasValue && request.AssisterId.Value != Guid.Empty ? request.AssisterId : null;
+            var goal = new MatchGoal
+            {
+                Id = Guid.NewGuid(),
+                MatchId = matchId,
+                ScorerId = request.ScorerId,
+                AssisterId = assisterId,
+                TeamId = request.TeamId,
+                Minute = request.Minute,
+                GoalType = request.GoalType,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            await unitOfWork.Repository<MatchGoal>().AddAsync(goal);
+            match.Status = MatchStatus.FINISHED;
+            match.FinalWhistleTime ??= DateTime.UtcNow;
+            match.UpdatedAt = DateTimeOffset.UtcNow;
+            unitOfWork.Repository<Match>().Update(match);
+            await unitOfWork.SaveChangesAsync();
+            await tournamentService.ResolvePlaceholders(match.TournamentId);
+
+            return Result<AddGoalResponse>.Success(new AddGoalResponse { MatchId = matchId, GoalId = goal.Id });
+        }
+
+        public async Task<Result<AddCardResponse>> AddCard(Guid matchId, CardRequest request)
+        {
+            var match = await unitOfWork.Repository<Match>().GetByIdAsync(matchId);
+            if (match == null)
+                return Result<AddCardResponse>.FailureStatusCode("Match not found", ErrorType.NotFound);
+
+            var cardPlayerId = request.PlayerId != Guid.Empty ? request.PlayerId : request.ScorerId;
+            var player = await unitOfWork.Repository<Player>()
+                .GetAll()
+                .Where(p => p.Id == cardPlayerId)
+                .Select(p => new { p.Id, p.TeamId })
+                .FirstOrDefaultAsync();
+            if (player == null)
+                return Result<AddCardResponse>.FailureStatusCode("Player does not exist.", ErrorType.BadRequest);
+            if (player.TeamId != request.TeamId)
+                return Result<AddCardResponse>.FailureStatusCode("Card recipient must belong to the card's team.", ErrorType.BadRequest);
+
+            var card = new MatchCard
+            {
+                Id = Guid.NewGuid(),
+                MatchId = matchId,
+                PlayerId = cardPlayerId,
+                TeamId = request.TeamId,
+                Minute = request.Minute,
+                CardType = request.CardType,
+                CreatedAt = DateTimeOffset.UtcNow
+            };
+            await unitOfWork.Repository<MatchCard>().AddAsync(card);
+            match.Status = MatchStatus.FINISHED;
+            match.FinalWhistleTime ??= DateTime.UtcNow;
+            match.UpdatedAt = DateTimeOffset.UtcNow;
+            unitOfWork.Repository<Match>().Update(match);
+            await unitOfWork.SaveChangesAsync();
+
+            return Result<AddCardResponse>.Success(new AddCardResponse { MatchId = matchId, CardId = card.Id });
         }
 
         public async Task<Result<SetMatchLineupResponse>> SetMatchLineup(Guid matchId, SetMatchLineupRequest request)

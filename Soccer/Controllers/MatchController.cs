@@ -28,6 +28,22 @@ namespace Soccer.Controllers
             return result;
         }
 
+        /// <summary>Add a single goal to the match (appends; does not replace existing goals).</summary>
+        [HttpPost("{id}/goals")]
+        [TranslateResultToActionResult]
+        public async Task<Result<AddGoalResponse>> AddGoal(Guid id, [FromBody] GoalRequest request)
+        {
+            return await matchService.AddGoal(id, request);
+        }
+
+        /// <summary>Add a single card to the match (appends; does not replace existing cards).</summary>
+        [HttpPost("{id}/cards")]
+        [TranslateResultToActionResult]
+        public async Task<Result<AddCardResponse>> AddCard(Guid id, [FromBody] CardRequest request)
+        {
+            return await matchService.AddCard(id, request);
+        }
+
         [HttpPatch("{id}/schedule")]
         [TranslateResultToActionResult]
         public async Task<Result<UpdateMatchScheduleResponse>> UpdateSchedule(Guid id, UpdateMatchScheduleRequest request)

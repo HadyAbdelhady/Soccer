@@ -67,6 +67,13 @@ namespace Infra.DBContext
                 .HasForeignKey(g => g.TeamId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<MatchGoal>()
+                .HasOne(g => g.Assister)
+                .WithMany()
+                .HasForeignKey(g => g.AssisterId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);
+
             modelBuilder.Entity<Player>()
                 .HasQueryFilter(x => !x.IsDeleted)
                 .Property(p => p.Position)

@@ -12,6 +12,10 @@ namespace Data.Entities
         public DateTimeOffset? UpdatedAt { get; set; }
         public Guid ScorerId { get; set; }
         public Player Scorer { get; set; } = null!;
+        /// <summary>Optional. For REGULAR: player who assisted (same team). For OWNGOAL: player from the other team who caused it.</summary>
+        [ForeignKey(nameof(Assister))]
+        public Guid? AssisterId { get; set; }
+        public Player? Assister { get; set; }
         [ForeignKey(nameof(Team))]
         public Guid TeamId { get; set; }
         public TeamUser Team { get; set; } = null!;
