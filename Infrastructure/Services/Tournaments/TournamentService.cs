@@ -820,5 +820,49 @@ namespace Business.Services.Tournaments
                 Tournaments = tournamentDtos
             });
         }
+
+        public async Task<Result<GetAllTournamentsWithTeamCountResponse>> GetAllTournamentsWithTeamCount()
+        {
+            var tournaments = await unitOfWork.Repository<Tournament>()
+                .GetAll()
+                .Include(t => t.Teams)
+                .ToListAsync();
+            
+            var tournamentDtos = tournaments.Select(t => new GetTournamentWithTeamCountDto
+            {
+                Id = t.Id,
+                Name = t.Name,
+                Type = t.Type,
+                StartDate = t.StartDateTime,
+                EndDate = t.EndDateTime,
+                TeamCount = t.Teams?.Count ?? 0
+            }).ToList();
+
+            return Result<GetAllTournamentsWithTeamCountResponse>.Success(new GetAllTournamentsWithTeamCountResponse
+            {
+                Tournaments = tournamentDtos
+            });
+        }
+
+        public async Task<Result<GetTournamentByIdResponse>> GetTournamentById(Guid id)
+        {
+            var tournament = await unitOfWork.Repository<Tournament>().GetByIdAsync(id);
+
+            if (tournament == null)
+            {
+                return Result<GetTournamentByIdResponse>.FailureStatusCode("Tournament not found", ErrorType.NotFound);
+            }
+
+            var tournamentDto = new GetTournamentByIdResponse
+            {
+                Id = tournament.Id,
+                Name = tournament.Name,
+                Type = tournament.Type,
+                StartDate = tournament.StartDateTime,
+                EndDate = tournament.EndDateTime
+            };
+
+            return Result<GetTournamentByIdResponse>.Success(tournamentDto);
+        }
     }
 }

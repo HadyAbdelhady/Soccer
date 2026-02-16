@@ -32,4 +32,8 @@ export class TeamService {
   getTeamPlayers(teamId: string): Observable<Result<Player[]>> {
     return this.http.get<Result<Player[]>>(`/teams/${teamId}/players`);
   }
+
+  getTeamsNotInTournaments(): Observable<Result<Team[]>> {
+    return this.http.get<Result<Team[]>>('/teams/not-in-tournaments');
+  }
 }

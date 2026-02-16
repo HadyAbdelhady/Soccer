@@ -110,6 +110,26 @@ namespace Business.Services.Teams
             });
         }
 
+        public async Task<Result<GetTeamsNotInTournamentsResponse>> GetTeamsNotInTournaments()
+        {
+            var teamsNotInTournaments = await unitOfWork.Repository<TeamUser>()
+                .GetAll()
+                .Where(t => !t.Tournaments.Any())
+                .ToListAsync();
+            
+            var teamDtos = teamsNotInTournaments.Select(t => new GetTeamDto
+            {
+                Id = t.Id,
+                Name = t.FullName,
+                Username = t.Username
+            }).ToList();
+
+            return Result<GetTeamsNotInTournamentsResponse>.Success(new GetTeamsNotInTournamentsResponse
+            {
+                Teams = teamDtos
+            });
+        }
+
         private static string GenerateRandomPassword(int length)
         {
             const string chars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#$%^&*?";

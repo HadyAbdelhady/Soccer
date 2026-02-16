@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { TournamentsListComponent } from './pages/tournaments-list.component';
 import { TournamentFormComponent } from './pages/tournament-form.component';
+import { AddTeamsToTournamentComponent } from './pages/add-teams-to-tournament.component';
 import { AuthGuard } from '../../core/guards';
 
 const routes: Routes = [
@@ -18,6 +19,11 @@ const routes: Routes = [
   {
     path: 'edit',
     component: TournamentFormComponent,
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'add-teams',
+    component: AddTeamsToTournamentComponent,
     canActivate: [AuthGuard]
   }
 ];

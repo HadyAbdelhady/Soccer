@@ -108,11 +108,25 @@ namespace Soccer.Controllers
             return await _standingsService.GetTournamentPlayerStatsAsync(id);
         }
 
+        [HttpGet("{id}")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetTournamentByIdResponse>> GetTournamentById(Guid id)
+        {
+            return await tournamentService.GetTournamentById(id);
+        }
+
         [HttpGet]
         [TranslateResultToActionResult]
         public async Task<Result<GetAllTournamentsResponse>> GetAllTournaments()
         {
             return await tournamentService.GetAllTournaments();
+        }
+
+        [HttpGet("with-team-count")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetAllTournamentsWithTeamCountResponse>> GetAllTournamentsWithTeamCount()
+        {
+            return await tournamentService.GetAllTournamentsWithTeamCount();
         }
     }
 }

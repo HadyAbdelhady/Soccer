@@ -42,5 +42,12 @@ namespace Soccer.Controllers
         {
             return await teamService.GetAllTeams();
         }
+
+        [HttpGet("not-in-tournaments")]
+        [TranslateResultToActionResult]
+        public async Task<Result<GetTeamsNotInTournamentsResponse>> GetTeamsNotInTournaments()
+        {
+            return await teamService.GetTeamsNotInTournaments();
+        }
     }
 }

@@ -47,6 +47,9 @@ import { LoadingSpinnerComponent } from '../../../shared/components';
           <mat-card-actions>
             <button mat-button routerLink="detail" [queryParams]="{ id: tournament.id }">View Details</button>
             <button mat-button routerLink="edit" [queryParams]="{ id: tournament.id }">Edit</button>
+            <button mat-button color="primary" routerLink="add-teams" [queryParams]="{ id: tournament.id }">
+              <mat-icon>group_add</mat-icon> Add Teams
+            </button>
           </mat-card-actions>
         </mat-card>
       </div>

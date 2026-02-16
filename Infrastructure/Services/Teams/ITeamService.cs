@@ -9,5 +9,6 @@ namespace Business.Services.Teams
         Task<Result<UpdateTeamResponse>> UpdateTeam(UpdateTeamRequest request);
         Task<Result<DeleteTeamResponse>> DeleteTeam(Guid id);
         Task<Result<GetAllTeamsResponse>> GetAllTeams();
+        Task<Result<GetTeamsNotInTournamentsResponse>> GetTeamsNotInTournaments();
     }
 }

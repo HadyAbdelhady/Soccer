@@ -40,4 +40,11 @@ export class TournamentService {
   getTopScorers(tournamentId: string): Observable<Result<any[]>> {
     return this.http.get<Result<any[]>>(`/tournaments/${tournamentId}/top-scorers`);
   }
+
+  addTeamsToTournament(tournamentId: string, teamIds: string[]): Observable<Result<any[]>> {
+    return this.http.post<Result<any[]>>(`/tournaments/addTeamsToTournament`, {
+      tournamentId,
+      teamIds
+    });
+  }
 }
